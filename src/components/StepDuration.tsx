@@ -29,14 +29,22 @@ export function StepDuration({ formData, updateFormData, onNext, onBack }: StepD
 
   const handleSelectDuration = (val: number) => {
     setIsCustom(false);
-    updateFormData({ durationHours: val });
+    const updatedServices = { ...(formData.selectedServices || {}) };
+    Object.keys(updatedServices).forEach((k) => {
+      updatedServices[k] = { ...updatedServices[k], durationHours: val };
+    });
+    updateFormData({ durationHours: val, selectedServices: updatedServices });
   };
 
   const handleCustomDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     setCustomHours(e.target.value);
     if (!isNaN(val) && val > 0) {
-      updateFormData({ durationHours: val });
+      const updatedServices = { ...(formData.selectedServices || {}) };
+      Object.keys(updatedServices).forEach((k) => {
+        updatedServices[k] = { ...updatedServices[k], durationHours: val };
+      });
+      updateFormData({ durationHours: val, selectedServices: updatedServices });
     }
   };
 

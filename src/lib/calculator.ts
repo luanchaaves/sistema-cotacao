@@ -124,12 +124,24 @@ export function calculateQuote(params: {
     : null;
 
   if (activeCombo) {
+    const comboBaseDuration = activeCombo.durationHours || 1.0;
+    const effectiveDuration = generalDurationHours || comboBaseDuration;
+    
+    let promoPrice = activeCombo.promoPrice;
+    let regularPrice = activeCombo.regularPrice;
+
+    // Scale combo price if duration is different from default 1h
+    if (effectiveDuration !== comboBaseDuration && comboBaseDuration > 0) {
+      promoPrice = roundCurrency((activeCombo.promoPrice / comboBaseDuration) * effectiveDuration);
+      regularPrice = roundCurrency((activeCombo.regularPrice / comboBaseDuration) * effectiveDuration);
+    }
+
     selectedComboData = {
       comboId: activeCombo.id,
       name: activeCombo.name,
-      promoPrice: roundCurrency(activeCombo.promoPrice),
-      regularPrice: roundCurrency(activeCombo.regularPrice),
-      durationHours: activeCombo.durationHours || generalDurationHours,
+      promoPrice,
+      regularPrice,
+      durationHours: effectiveDuration,
       includedItems: activeCombo.includedItems || [],
       characters: selectedCharacterNames,
     };
@@ -164,7 +176,8 @@ export function calculateQuote(params: {
       continue;
     }
 
-    const duration = Math.max(0.5, selectionInfo.durationHours || generalDurationHours || 1.0);
+    // Use general duration chosen by customer (e.g., 0.5h, 1.0h, 2.0h, etc.)
+    const duration = Math.max(0.5, generalDurationHours || selectionInfo.durationHours || 1.0);
     let itemTotal = 0;
 
     if (service.priceType === 'hourly') {
