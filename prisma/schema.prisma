@@ -1,0 +1,131 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Setting {
+  id                        String   @id @default("default")
+  companyName               String   @default("Robô LED Partner")
+  originCep                 String   @default("09710-000")
+  originStreet              String   @default("Centro")
+  originNumber              String   @default("S/N")
+  originComplement          String   @default("")
+  originNeighborhood        String   @default("Centro")
+  originCity                String   @default("São Bernardo do Campo")
+  originState               String   @default("SP")
+  originLat                 Float    @default(-23.6914)
+  originLng                 Float    @default(-46.5646)
+  vehicleConsumptionKmL     Float    @default(10.0)
+  gasPricePerLiter          Float    @default(7.00)
+  displacementMarginFixed   Float    @default(30.00)
+  minShippingPrice          Float    @default(50.00)
+  whatsappPhone             String   @default("5511919973647")
+  instagramUrl              String   @default("https://www.instagram.com/roboledpartner/")
+  linktreeUrl               String   @default("https://linktr.ee/roboledpartner")
+  updatedAt                 DateTime @updatedAt
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  price       Float
+  priceType   String   @default("hourly") // "hourly" | "fixed"
+  category    String   @default("attraction") // "attraction" | "special_effect" | "character" | "extra"
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Character {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  category  String   @default("Infantil")
+  imageUrl  String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Combo {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  imageUrl      String?
+  regularPrice  Float
+  promoPrice    Float
+  durationHours Float    @default(1.0)
+  includedItems String   // JSON string with array of included item names/slugs
+  isActive      Boolean  @default(true)
+  order         Int      @default(0)
+  badgeText     String?  @default("Mais Escolhido")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Toll {
+  id        String   @id @default(cuid())
+  name      String
+  highway   String
+  price     Float
+  region    String
+  direction String   @default("Ambos") // "Ida", "Volta", "Ambos"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quote {
+  id                   String   @id @default(cuid())
+  code                 String   @unique // e.g. RLP-2026-9842
+  clientName           String
+  clientWhatsapp       String
+  eventType            String
+  eventDate            String
+  eventTime            String
+  guestCount           Int?
+  addressFull          String
+  addressCep           String?
+  addressCity          String?
+  addressState         String?
+  distanceOneWayKm     Float
+  distanceTotalKm      Float
+  durationHours        Float    @default(1.0)
+  selectedComboId      String?
+  selectedComboData    String?  // JSON string
+  selectedServicesData String   // JSON string
+  selectedCharacters   String?  // JSON string
+  fuelCost             Float
+  marginCost           Float
+  tollsCost            Float
+  calculatedShipping   Float
+  finalShipping        Float
+  servicesSubtotal     Float
+  totalAmount          Float
+  notes                String?
+  status               String   @default("pending") // "pending" | "contacted" | "confirmed" | "cancelled"
+  ipAddress            String?
+  userAgent            String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Administrador")
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
