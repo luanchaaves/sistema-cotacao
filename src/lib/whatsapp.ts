@@ -1,8 +1,8 @@
 import { formatCurrencyBRL } from './calculator';
-import { CompanySetting, SavedQuote } from './types';
+import { CompanySetting } from './types';
 
 /**
- * Generate a clean, highly professional WhatsApp message for the quote proposal.
+ * Generate a clean, high-converting, professional WhatsApp message for the quote proposal.
  */
 export function generateWhatsAppMessage(
   quote: {
@@ -33,58 +33,52 @@ export function generateWhatsAppMessage(
   const dateFormatted = quote.eventDate;
   const timeFormatted = quote.eventTime ? `às ${quote.eventTime}` : '';
 
-  let attractionsText = '';
+  const attractionsLines: string[] = [];
 
   if (quote.selectedComboData && quote.selectedComboData.name) {
-    attractionsText += `• *Combo:* ${quote.selectedComboData.name} (${quote.selectedComboData.durationHours || quote.durationHours || 1}h) — ${formatCurrencyBRL(
-      quote.selectedComboData.promoPrice
-    )}\n`;
+    const dur = quote.selectedComboData.durationHours || quote.durationHours || 1;
+    attractionsLines.push(
+      `• *Combo:* ${quote.selectedComboData.name} (${dur}h de show) — ${formatCurrencyBRL(
+        quote.selectedComboData.promoPrice
+      )}`
+    );
   }
 
   if (Array.isArray(quote.selectedServicesData) && quote.selectedServicesData.length > 0) {
     for (const s of quote.selectedServicesData) {
       const charInfo =
         s.selectedCharacters && s.selectedCharacters.length > 0
-          ? ` [${s.selectedCharacters.join(', ')}]`
+          ? ` (${s.selectedCharacters.join(', ')})`
           : '';
       const durInfo = s.priceType === 'hourly' ? ` (${s.durationHours}h)` : '';
-      attractionsText += `• ${s.name}${charInfo}${durInfo} — ${formatCurrencyBRL(s.itemTotal)}\n`;
+      attractionsLines.push(`• ${s.name}${charInfo}${durInfo} — ${formatCurrencyBRL(s.itemTotal)}`);
     }
   }
 
-  if (!attractionsText) {
-    attractionsText = '• Atrações a confirmar\n';
+  if (attractionsLines.length === 0) {
+    attractionsLines.push('• Atrações a confirmar com a equipe');
   }
 
   const lines = [
-    `*ROBÔ LED PARTNER — ORÇAMENTO COMERCIAL*`,
-    `Ref: #${quote.code}`,
+    `Olá, equipe *Robô LED Partner*! 🤖✨`,
+    `Fiz uma cotação pelo site e gostaria de confirmar a disponibilidade e meu orçamento:`,
     ``,
-    `Olá, equipe Robô LED Partner! Fiz uma cotação pelo site e gostaria de confirmar meu orçamento e a disponibilidade da data para o meu evento:`,
-    ``,
-    `📋 *DADOS DO EVENTO*`,
+    `📋 *RESUMO DA PROPOSTA (#${quote.code})*`,
     `• *Cliente:* ${quote.clientName}`,
-    `• *WhatsApp:* ${quote.clientWhatsapp}`,
     `• *Tipo de Evento:* ${quote.eventType}`,
-    `• *Data:* ${dateFormatted} ${timeFormatted}`.trim(),
-    quote.guestCount ? `• *Estimativa de convidados:* ${quote.guestCount}` : null,
+    `• *Data & Horário:* ${dateFormatted} ${timeFormatted}`.trim(),
+    quote.guestCount ? `• *Estimativa de Convidados:* ${quote.guestCount}` : null,
     `• *Local:* ${quote.addressFull}`,
     ``,
-    `✨ *ATRAÇÕES CONTRATADAS*`,
-    attractionsText.trim(),
-    `*Subtotal Atrações:* ${formatCurrencyBRL(quote.servicesSubtotal)}`,
+    `⚡ *ATRAÇÕES SELECIONADAS:*`,
+    ...attractionsLines,
     ``,
-    `🚚 *LOGÍSTICA & DESLOCAMENTO*`,
-    `• *Distância:* ${quote.distanceOneWayKm} km (Ida e volta: ${quote.distanceTotalKm} km)`,
-    `• *Combustível:* ${formatCurrencyBRL(quote.fuelCost)}`,
-    `• *Margem operacional:* ${formatCurrencyBRL(quote.marginCost)}`,
-    quote.tollsCost > 0 ? `• *Pedágios:* ${formatCurrencyBRL(quote.tollsCost)}` : null,
-    `*Frete Total:* ${formatCurrencyBRL(quote.finalShipping)}`,
+    `💵 *Subtotal Atrações:* ${formatCurrencyBRL(quote.servicesSubtotal)}`,
+    `🚚 *Deslocamento & Frete:* ${formatCurrencyBRL(quote.finalShipping)} (${quote.distanceTotalKm} km ida e volta)`,
+    `🔥 *VALOR TOTAL ESTIMADO: ${formatCurrencyBRL(quote.totalAmount)}*`,
     ``,
-    `💰 *TOTAL ESTIMADO: ${formatCurrencyBRL(quote.totalAmount)}*`,
-    ``,
-    `_Este orçamento é uma estimativa automática sujeita à confirmação de disponibilidade da data e condições técnicas do local._`,
-  ].filter((item) => item !== null);
+    `Vocês têm disponibilidade nessa data? Gostaria de tirar algumas dúvidas e fechar! 🎉`,
+  ].filter((item) => item !== null) as string[];
 
   return lines.join('\n');
 }
@@ -92,12 +86,8 @@ export function generateWhatsAppMessage(
 /**
  * Generate complete WhatsApp Web / Mobile redirect URL.
  */
-export function generateWhatsAppUrl(
-  phone: string,
-  message: string
-): string {
+export function generateWhatsAppUrl(phone: string, message: string): string {
   const cleanPhone = phone.replace(/\D/g, '');
-  // Default to 5511919973647 if phone is empty
   const targetPhone = cleanPhone || '5511919973647';
   const encodedText = encodeURIComponent(message);
   return `https://api.whatsapp.com/send/?phone=${targetPhone}&text=${encodedText}&type=phone_number&app_absent=0`;

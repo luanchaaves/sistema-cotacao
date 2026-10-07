@@ -116,6 +116,7 @@ export async function POST(req: NextRequest) {
         whatsappPhone: setting.whatsappPhone,
         instagramUrl: setting.instagramUrl,
         linktreeUrl: setting.linktreeUrl,
+        maxEventsPerDay: setting.maxEventsPerDay || 2,
       },
       allServices: services,
       allCombos: combos,

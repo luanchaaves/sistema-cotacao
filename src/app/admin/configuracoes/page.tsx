@@ -281,6 +281,24 @@ export default function AdminSettingsPage() {
                 <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">R$</span>
               </div>
             </div>
+
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-300 flex items-center justify-between">
+                <span>Capacidade Máxima por Dia</span>
+                <span className="text-[11px] text-slate-400">Eventos / dia</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={setting?.maxEventsPerDay || 2}
+                  onChange={(e) => handleChange('maxEventsPerDay', parseInt(e.target.value) || 2)}
+                  className="w-full px-3.5 py-2.5 rounded-xl font-medium"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">eventos</span>
+              </div>
+            </div>
           </div>
         </div>
 

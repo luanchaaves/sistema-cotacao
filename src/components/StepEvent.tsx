@@ -1,7 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { User, Phone, Calendar, Clock, Users, Sparkles, Heart, Gift, Crown, Briefcase, GraduationCap, PartyPopper } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  User,
+  Phone,
+  Calendar,
+  Clock,
+  Users,
+  Sparkles,
+  Heart,
+  Gift,
+  Crown,
+  Briefcase,
+  GraduationCap,
+  PartyPopper,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  AlertTriangle,
+} from 'lucide-react';
 import { QuoteFormData } from '@/lib/types';
 
 interface StepEventProps {
@@ -12,6 +29,15 @@ interface StepEventProps {
 
 export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [availability, setAvailability] = useState<{
+    checked: boolean;
+    available: boolean;
+    isFullDayUnavailable?: boolean;
+    isTimeUnavailable?: boolean;
+    reason?: string;
+    bookedTimes?: string[];
+  }>({ checked: false, available: true });
 
   const eventTypes = [
     { label: 'Casamento', icon: Heart, description: 'Entrada dos noivos & Pista' },
@@ -40,6 +66,40 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
     updateFormData({ clientWhatsapp: formatted });
   };
 
+  // Live availability check on date/time change
+  useEffect(() => {
+    if (!formData.eventDate) {
+      setAvailability({ checked: false, available: true });
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setCheckingAvailability(true);
+      try {
+        const query = new URLSearchParams({
+          date: formData.eventDate,
+          time: formData.eventTime || '',
+        });
+        const res = await fetch(`/api/public/calendar/availability?${query.toString()}`);
+        const data = await res.json();
+        setAvailability({
+          checked: true,
+          available: Boolean(data.available),
+          isFullDayUnavailable: Boolean(data.isFullDayUnavailable),
+          isTimeUnavailable: Boolean(data.isTimeUnavailable),
+          reason: data.reason,
+          bookedTimes: data.bookedTimes || [],
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [formData.eventDate, formData.eventTime]);
+
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!formData.clientName.trim()) {
@@ -54,6 +114,10 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
     }
     if (!formData.eventDate) {
       errs.eventDate = 'Informe a data prevista do evento.';
+    }
+
+    if (availability.checked && !availability.available && availability.isFullDayUnavailable) {
+      errs.eventDate = 'Esta data está indisponível na nossa agenda. Escolha outra data.';
     }
 
     setErrors(errs);
@@ -177,10 +241,18 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
           {/* Date */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-cyan-400" />
-              Data do Evento *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-cyan-400" />
+                Data do Evento *
+              </label>
+              {checkingAvailability && (
+                <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin text-fuchsia-400" />
+                  Checando agenda...
+                </span>
+              )}
+            </div>
             <input
               type="date"
               value={formData.eventDate}
@@ -229,6 +301,36 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
             </select>
           </div>
         </div>
+
+        {/* Live Availability Feedback Banner */}
+        {formData.eventDate && availability.checked && (
+          <div className="pt-1">
+            {availability.available ? (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  <strong>Data disponível!</strong> Nossa equipe possui disponibilidade para apresentações no dia selecionado.
+                </span>
+              </div>
+            ) : availability.isFullDayUnavailable ? (
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block text-red-200">Data Indisponível na Agenda</strong>
+                  <span className="text-[11px] opacity-90">{availability.reason}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block text-amber-200">Atenção ao Horário</strong>
+                  <span className="text-[11px] opacity-90">{availability.reason}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Button */}

@@ -27,6 +27,19 @@ export interface CompanySetting {
   whatsappPhone: string;
   instagramUrl: string;
   linktreeUrl: string;
+  maxEventsPerDay: number;
+  googleCalendarIcalUrl?: string | null;
+}
+
+export interface BlockedScheduleItem {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  startTime?: string | null;
+  endTime?: string | null;
+  isFullDay: boolean;
+  reason?: string | null;
+  status: string; // 'blocked' | 'confirmed'
 }
 
 export interface ServiceItem {

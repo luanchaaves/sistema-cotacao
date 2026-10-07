@@ -213,6 +213,7 @@ export default function HomePage() {
     whatsappPhone: '5511919973647',
     instagramUrl: 'https://www.instagram.com/roboledpartner/',
     linktreeUrl: 'https://linktr.ee/roboledpartner',
+    maxEventsPerDay: 2,
   };
 
   return (

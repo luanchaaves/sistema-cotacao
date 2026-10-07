@@ -26,6 +26,8 @@ model Setting {
   whatsappPhone             String   @default("5511919973647")
   instagramUrl              String   @default("https://www.instagram.com/roboledpartner/")
   linktreeUrl               String   @default("https://linktr.ee/roboledpartner")
+  maxEventsPerDay           Int      @default(2)
+  googleCalendarIcalUrl     String?
   updatedAt                 DateTime @updatedAt
 }
 
@@ -83,6 +85,19 @@ model Toll {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BlockedSchedule {
+  id          String   @id @default(cuid())
+  title       String   @default("Evento Confirmado")
+  date        String   // YYYY-MM-DD
+  startTime   String?  // HH:mm
+  endTime     String?  // HH:mm
+  isFullDay   Boolean  @default(false)
+  reason      String?
+  status      String   @default("confirmed") // "blocked" | "confirmed"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Quote {

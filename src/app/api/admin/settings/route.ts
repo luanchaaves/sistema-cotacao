@@ -43,6 +43,7 @@ export async function PUT(req: NextRequest) {
         whatsappPhone: body.whatsappPhone ?? '5511919973647',
         instagramUrl: body.instagramUrl ?? 'https://www.instagram.com/roboledpartner/',
         linktreeUrl: body.linktreeUrl ?? 'https://linktr.ee/roboledpartner',
+        maxEventsPerDay: Number(body.maxEventsPerDay) || 2,
       },
       create: {
         id: 'default',
@@ -63,6 +64,7 @@ export async function PUT(req: NextRequest) {
         whatsappPhone: body.whatsappPhone ?? '5511919973647',
         instagramUrl: body.instagramUrl ?? 'https://www.instagram.com/roboledpartner/',
         linktreeUrl: body.linktreeUrl ?? 'https://linktr.ee/roboledpartner',
+        maxEventsPerDay: Number(body.maxEventsPerDay) || 2,
       },
     });
 
