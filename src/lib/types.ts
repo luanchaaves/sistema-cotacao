@@ -29,6 +29,10 @@ export interface CompanySetting {
   linktreeUrl: string;
   maxEventsPerDay: number;
   googleCalendarIcalUrl?: string | null;
+  googleCalendarUrl1?: string | null;
+  googleCalendarUrl2?: string | null;
+  sistemaContratoUrl?: string | null;
+  adminSecretPath?: string | null;
 }
 
 export interface BlockedScheduleItem {

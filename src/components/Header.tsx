@@ -64,14 +64,6 @@ export function Header({ setting }: HeaderProps) {
             <MessageCircle className="w-4 h-4 text-emerald-400" />
             <span className="hidden sm:inline">WhatsApp</span>
           </a>
-
-          <Link
-            href="/admin"
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 border border-white/5 transition-all text-xs"
-            title="Acesso Administrativo"
-          >
-            <ShieldCheck className="w-4 h-4" />
-          </Link>
         </div>
       </div>
     </header>

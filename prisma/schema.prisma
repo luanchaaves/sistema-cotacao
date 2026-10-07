@@ -28,6 +28,10 @@ model Setting {
   linktreeUrl               String   @default("https://linktr.ee/roboledpartner")
   maxEventsPerDay           Int      @default(2)
   googleCalendarIcalUrl     String?
+  googleCalendarUrl1        String?  // roboledpartner@gmail.com ics
+  googleCalendarUrl2        String?  // luanchaves1011@gmail.com ics
+  sistemaContratoUrl        String?  @default("http://192.168.12.7:3001") // Sistema de Contratos
+  adminSecretPath           String?  @default("admin")
   updatedAt                 DateTime @updatedAt
 }
 

@@ -69,14 +69,6 @@ export function Footer({ setting }: FooterProps) {
             <Globe className="w-4 h-4" />
             <span>Linktree Oficial</span>
           </a>
-
-          <Link
-            href="/admin"
-            className="flex items-center gap-1 hover:text-slate-200 transition-colors text-slate-400"
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span>Painel Admin</span>
-          </Link>
         </div>
       </div>
 

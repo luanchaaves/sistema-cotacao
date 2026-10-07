@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureDatabaseSeeded } from '@/lib/seed';
+import { fetchGoogleCalendarEvents, GoogleCalendarEvent } from '@/lib/gcalendar';
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,33 +15,63 @@ export async function GET(req: NextRequest) {
     }
 
     // Normalize date representation
-    let formattedDate = dateQuery.trim();
-    let altFormattedDate = dateQuery.trim();
+    let isoDate = dateQuery.trim(); // YYYY-MM-DD
+    let brDate = dateQuery.trim(); // DD/MM/YYYY
 
     if (dateQuery.includes('-')) {
       const parts = dateQuery.split('-');
       if (parts.length === 3) {
-        // YYYY-MM-DD -> DD/MM/YYYY
-        altFormattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        isoDate = `${parts[0]}-${parts[1]}-${parts[2]}`;
+        brDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
       }
     } else if (dateQuery.includes('/')) {
       const parts = dateQuery.split('/');
       if (parts.length === 3) {
-        // DD/MM/YYYY -> YYYY-MM-DD
-        altFormattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        brDate = `${parts[0]}/${parts[1]}/${parts[2]}`;
+        isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
     }
 
     const setting = await prisma.setting.findUnique({ where: { id: 'default' } });
     const maxEvents = setting?.maxEventsPerDay || 2;
 
-    // 1. Check blocked schedule
+    // 1. Fetch Google Calendar events (roboledpartner@gmail.com & luanchaves1011@gmail.com)
+    let gCalEvents: GoogleCalendarEvent[] = [];
+    const gCalUrls: { url: string; label: string }[] = [];
+    if (setting?.googleCalendarUrl1) {
+      gCalUrls.push({ url: setting.googleCalendarUrl1, label: 'roboledpartner@gmail.com' });
+    }
+    if (setting?.googleCalendarUrl2) {
+      gCalUrls.push({ url: setting.googleCalendarUrl2, label: 'luanchaves1011@gmail.com' });
+    }
+    if (setting?.googleCalendarIcalUrl) {
+      gCalUrls.push({ url: setting.googleCalendarIcalUrl, label: 'Google Calendar Geral' });
+    }
+
+    if (gCalUrls.length > 0) {
+      try {
+        const allGCal = await fetchGoogleCalendarEvents(gCalUrls);
+        gCalEvents = allGCal.filter((ev) => ev.date === isoDate);
+      } catch (err) {
+        console.warn('Google Calendar sync warning:', err);
+      }
+    }
+
+    // If Google Calendar has a full-day event
+    const gCalFullDay = gCalEvents.find((e) => e.isFullDay);
+    if (gCalFullDay) {
+      return NextResponse.json({
+        available: false,
+        isFullDayUnavailable: true,
+        reason: `Data indisponível na nossa agenda Google Calendar (${gCalFullDay.title}).`,
+        bookedTimes: [],
+      });
+    }
+
+    // 2. Check internal blocked schedule
     const blockedEntries = await prisma.blockedSchedule.findMany({
       where: {
-        OR: [
-          { date: formattedDate },
-          { date: altFormattedDate },
-        ],
+        OR: [{ date: isoDate }, { date: brDate }],
       },
     });
 
@@ -55,30 +86,27 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 2. Check confirmed quotes
+    // 3. Check confirmed quotes
     const confirmedQuotes = await prisma.quote.findMany({
       where: {
         status: 'confirmed',
-        OR: [
-          { eventDate: formattedDate },
-          { eventDate: altFormattedDate },
-        ],
+        OR: [{ eventDate: isoDate }, { eventDate: brDate }],
       },
     });
 
-    const totalEventsCount = blockedEntries.length + confirmedQuotes.length;
+    const totalEventsCount = blockedEntries.length + confirmedQuotes.length + gCalEvents.length;
 
     if (totalEventsCount >= maxEvents) {
       return NextResponse.json({
         available: false,
         isFullDayUnavailable: true,
-        reason: 'Agenda cheia para esta data (limite de eventos atingido). Entre em contato no WhatsApp para verificar encaixe.',
+        reason: 'Agenda cheia para esta data (limite de apresentações atingido). Entre em contato no WhatsApp para verificar encaixe.',
         totalEventsCount,
         maxEvents,
       });
     }
 
-    // 3. Collect booked times
+    // 4. Collect booked times (from blocks, quotes, and Google Calendar)
     const bookedTimes: string[] = [];
     blockedEntries.forEach((b) => {
       if (b.startTime) bookedTimes.push(b.startTime);
@@ -86,8 +114,11 @@ export async function GET(req: NextRequest) {
     confirmedQuotes.forEach((q) => {
       if (q.eventTime) bookedTimes.push(q.eventTime);
     });
+    gCalEvents.forEach((g) => {
+      if (g.startTime) bookedTimes.push(g.startTime);
+    });
 
-    // 4. Check time slot conflict if time was requested
+    // 5. Check time slot conflict if time was requested
     if (timeQuery && timeQuery.includes(':')) {
       const [reqH, reqM] = timeQuery.split(':').map(Number);
       const reqMinutes = reqH * 60 + reqM;
@@ -114,6 +145,7 @@ export async function GET(req: NextRequest) {
       available: true,
       remainingSlots: maxEvents - totalEventsCount,
       bookedTimes,
+      gCalEventsFound: gCalEvents.length,
     });
   } catch (err: any) {
     console.error('Calendar availability check error:', err);

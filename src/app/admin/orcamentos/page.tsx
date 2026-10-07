@@ -343,7 +343,32 @@ export default function AdminQuotesPage() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={`http://192.168.12.7:3001/?cliente=${encodeURIComponent(
+                    selectedQuote.clientName
+                  )}&telefone=${encodeURIComponent(
+                    selectedQuote.clientWhatsapp
+                  )}&evento=${encodeURIComponent(
+                    selectedQuote.eventType
+                  )}&data=${encodeURIComponent(
+                    selectedQuote.eventDate
+                  )}&horario=${encodeURIComponent(
+                    selectedQuote.eventTime || ''
+                  )}&local=${encodeURIComponent(
+                    selectedQuote.addressFull
+                  )}&valor=${encodeURIComponent(
+                    selectedQuote.totalAmount
+                  )}&proposta=${encodeURIComponent(selectedQuote.code)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                  title="Abrir no Sistema de Contratos (Porta 3001)"
+                >
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <span>📄 Gerar Contrato (Sistema Robô LED)</span>
+                </a>
+
                 <a
                   href={`https://api.whatsapp.com/send/?phone=${selectedQuote.clientWhatsapp.replace(/\D/g, '')}&text=Olá ${encodeURIComponent(selectedQuote.clientName)}, tudo bem? Falamos da Robô LED Partner!`}
                   target="_blank"
@@ -351,7 +376,7 @@ export default function AdminQuotesPage() {
                   className="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>Conversar no WhatsApp</span>
+                  <span>WhatsApp</span>
                 </a>
                 <Link
                   href={`/orcamento/${selectedQuote.code}`}

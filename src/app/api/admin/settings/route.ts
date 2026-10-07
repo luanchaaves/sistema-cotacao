@@ -44,6 +44,10 @@ export async function PUT(req: NextRequest) {
         instagramUrl: body.instagramUrl ?? 'https://www.instagram.com/roboledpartner/',
         linktreeUrl: body.linktreeUrl ?? 'https://linktr.ee/roboledpartner',
         maxEventsPerDay: Number(body.maxEventsPerDay) || 2,
+        googleCalendarUrl1: body.googleCalendarUrl1 !== undefined ? body.googleCalendarUrl1 : undefined,
+        googleCalendarUrl2: body.googleCalendarUrl2 !== undefined ? body.googleCalendarUrl2 : undefined,
+        sistemaContratoUrl: body.sistemaContratoUrl !== undefined ? body.sistemaContratoUrl : undefined,
+        adminSecretPath: body.adminSecretPath !== undefined ? body.adminSecretPath : undefined,
       },
       create: {
         id: 'default',
@@ -65,6 +69,10 @@ export async function PUT(req: NextRequest) {
         instagramUrl: body.instagramUrl ?? 'https://www.instagram.com/roboledpartner/',
         linktreeUrl: body.linktreeUrl ?? 'https://linktr.ee/roboledpartner',
         maxEventsPerDay: Number(body.maxEventsPerDay) || 2,
+        googleCalendarUrl1: body.googleCalendarUrl1 || null,
+        googleCalendarUrl2: body.googleCalendarUrl2 || null,
+        sistemaContratoUrl: body.sistemaContratoUrl || 'http://192.168.12.7:3001',
+        adminSecretPath: body.adminSecretPath || 'admin',
       },
     });
 
