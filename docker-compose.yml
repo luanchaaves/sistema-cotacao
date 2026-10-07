@@ -6,11 +6,11 @@ services:
     container_name: roboled-sistema-cotacao
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3002}:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/dev.db
       - JWT_SECRET=roboled-partner-secret-super-secure-key-2026-quote-system
-      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3002
     volumes:
       - ./data:/app/data
