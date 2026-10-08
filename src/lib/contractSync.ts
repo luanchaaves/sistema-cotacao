@@ -1,7 +1,8 @@
 /**
  * Contract System Sync Engine
  * Connects with `https://contrato.roboledpartner.com.br` or `http://192.168.12.7:3001`
- * to fetch confirmed contracts and presentations, ensuring bidirectional availability synchronization.
+ * to fetch confirmed contracts and events (/api/eventos & /api/contratos),
+ * ensuring real-time bidirectional availability synchronization.
  */
 
 export interface ContractEvent {
@@ -18,7 +19,7 @@ export interface ContractEvent {
 
 let cachedContracts: ContractEvent[] = [];
 let lastContractFetch = 0;
-const CONTRACT_CACHE_TTL = 60 * 1000; // 1 minute
+const CONTRACT_CACHE_TTL = 30 * 1000; // 30 seconds
 
 export async function fetchContractSystemEvents(
   contractUrl?: string | null,
@@ -29,44 +30,48 @@ export async function fetchContractSystemEvents(
     return cachedContracts;
   }
 
-  const baseUrls: string[] = [];
-  if (contractUrl && contractUrl.startsWith('http')) {
-    baseUrls.push(contractUrl.replace(/\/$/, ''));
+  const baseCandidates: string[] = [];
+  if (contractUrl && typeof contractUrl === 'string' && contractUrl.trim().startsWith('http')) {
+    baseCandidates.push(contractUrl.trim().replace(/\/$/, ''));
   }
-  baseUrls.push(
+  baseCandidates.push(
     'https://contrato.roboledpartner.com.br',
     'http://192.168.12.7:3001',
+    'http://sistema-contrato-roboled:3001',
     'http://host.docker.internal:3001',
     'http://localhost:3001'
   );
 
   const routePaths = [
+    '/api/eventos',
+    '/api/contratos',
+    '/api/v1/eventos',
     '/api/events',
     '/api/contracts',
     '/api/presentations',
-    '/api/festas',
-    '/api/shows',
     '/api/agenda',
-    '/api/calendar',
-    '/api/admin/contracts',
-    '/api/admin/events',
   ];
 
   const endpointsToTry: string[] = [];
-  for (const base of baseUrls) {
-    for (const path of routePaths) {
-      endpointsToTry.push(`${base}${path}`);
+
+  for (const base of baseCandidates) {
+    if (base.includes('/api/')) {
+      endpointsToTry.push(base);
+    } else {
+      for (const path of routePaths) {
+        endpointsToTry.push(`${base}${path}`);
+      }
     }
   }
 
   for (const url of endpointsToTry) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'RoboLedQuoteSync/1.0',
+          'User-Agent': 'RoboLedQuoteSync/2.0',
           'Accept': 'application/json',
         },
         signal: controller.signal,
@@ -76,47 +81,89 @@ export async function fetchContractSystemEvents(
 
       if (res.ok) {
         const data = await res.json();
-        const rawList = Array.isArray(data)
+        const rawList: any[] = Array.isArray(data)
           ? data
-          : data.events || data.contracts || data.presentations || data.items || data.data || [];
+          : data.events || data.eventos || data.contratos || data.contracts || data.data || [];
 
         if (Array.isArray(rawList) && rawList.length > 0) {
           const parsed: ContractEvent[] = rawList
             .filter((item: any) => {
-              const st = String(item.status || item.statusPresentation || '').toLowerCase();
-              return !st.includes('cancel') && !st.includes('recusad');
+              const st = String(
+                item.status || item.statusPresentation || item.situacao || ''
+              ).toLowerCase();
+              return !st.includes('cancel') && !st.includes('recusad') && !st.includes('excluid');
             })
             .map((item: any) => {
-              let dateStr = item.eventDate || item.date || item.dataEvento || item.data || '';
-              if (dateStr.includes('T')) {
-                dateStr = dateStr.split('T')[0];
-              } else if (dateStr.includes('/')) {
-                const parts = dateStr.split('/');
+              // 1. Parse date (handles YYYY-MM-DD, DD/MM/YYYY, or ISO timestamp)
+              let rawDate =
+                item.data ||
+                item.evento_data ||
+                item.eventDate ||
+                item.date ||
+                item.dataEvento ||
+                '';
+              if (rawDate.includes('T')) {
+                rawDate = rawDate.split('T')[0];
+              } else if (rawDate.includes('/')) {
+                const parts = rawDate.split('/');
                 if (parts.length === 3) {
                   // DD/MM/YYYY -> YYYY-MM-DD
-                  dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                  rawDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                 }
               }
 
+              // 2. Parse client & attraction title
+              const clientName =
+                item.cliente?.nome ||
+                item.cliente_nome ||
+                item.nome_evento ||
+                item.clientName ||
+                item.cliente ||
+                item.nome ||
+                'Evento Confirmado';
+
+              const eventType =
+                item.tipo_evento ||
+                item.tipo ||
+                item.eventType ||
+                item.personagem ||
+                (Array.isArray(item.atracoes) && item.atracoes.length > 0
+                  ? item.atracoes.map((a: any) => a.atracao?.nome || a.nome).filter(Boolean).join(', ')
+                  : 'Apresentação Robô de LED');
+
+              const eventTime =
+                item.horario ||
+                item.evento_horario ||
+                item.eventTime ||
+                item.time ||
+                item.hora ||
+                null;
+
+              const location =
+                item.endereco ||
+                item.evento_endereco ||
+                item.cidade ||
+                item.evento_cidade ||
+                item.local ||
+                item.location ||
+                null;
+
+              const price =
+                Number(item.valor_total || item.valor || item.price || item.totalValue) || undefined;
+
               return {
-                id: String(item.id || item._id || Math.random()),
-                clientName:
-                  item.clientName ||
-                  item.cliente ||
-                  item.nome ||
-                  item.title ||
-                  item.characterName ||
-                  'Evento Confirmado (Contrato)',
-                eventType: item.eventType || item.tipoEvento || item.attraction || 'Apresentação Robô LED',
-                eventDate: dateStr,
-                eventTime: item.eventTime || item.time || item.horario || item.hora || null,
-                location: item.location || item.local || item.address || item.addressCity || item.cidade || null,
+                id: String(item.id || item.codigo || item.code || Math.random()),
+                clientName,
+                eventType,
+                eventDate: rawDate,
+                eventTime,
+                location,
                 status: item.status || 'Confirmado',
-                price: Number(item.price || item.totalValue || item.valorAcordado) || undefined,
+                price,
                 source: 'sistema-contrato' as const,
               };
             })
-            .filter((item) => Boolean(item.eventDate));
+            .filter((item) => Boolean(item.eventDate && item.eventDate.length >= 8));
 
           if (parsed.length > 0) {
             cachedContracts = parsed;

@@ -10,14 +10,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { url } = await req.json();
-    const targetUrl = url || 'https://contrato.roboledpartner.com.br';
+    const targetUrl = url ? url.trim() : 'https://contrato.roboledpartner.com.br';
 
     const events = await fetchContractSystemEvents(targetUrl, true);
 
     if (events.length > 0) {
       return NextResponse.json({
         success: true,
-        message: `Conexão bem-sucedida! Foram encontrados ${events.length} evento(s) ativos no Sistema de Contratos.`,
+        message: `Conexão bem-sucedida! Foram encontrados e sincronizados ${events.length} evento(s) do Sistema de Contratos.`,
         eventsCount: events.length,
         sampleEvents: events.slice(0, 5),
       });
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: false,
-      error: `Não foi possível puxar eventos automaticamente de ${targetUrl}. Verifique se a URL da API está correta ou se o sistema exige autenticação. Dica: Os eventos do Sistema de Contratos que já estão no Google Agenda são sincronizados automaticamente pela 1ª coluna!`,
+      error: `Não foi possível carregar eventos de "${targetUrl}". Verifique se o servidor de contratos está ativo ou use "https://contrato.roboledpartner.com.br" / "http://192.168.12.7:3001".`,
       eventsCount: 0,
     });
   } catch (err: any) {
