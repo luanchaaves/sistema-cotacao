@@ -17,6 +17,8 @@ import {
   ExternalLink,
   Info,
   CalendarCheck2,
+  Check,
+  Search,
 } from 'lucide-react';
 import { formatCurrencyBRL } from '@/lib/calculator';
 
@@ -27,6 +29,7 @@ export default function AdminAgendaPage() {
   const [contractEvents, setContractEvents] = useState<any[]>([]);
   const [setting, setSetting] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [gcalModalOpen, setGcalModalOpen] = useState(false);
 
@@ -35,6 +38,10 @@ export default function AdminAgendaPage() {
     googleCalendarUrl2: '',
   });
   const [savingGcal, setSavingGcal] = useState(false);
+  const [testingUrl1, setTestingUrl1] = useState(false);
+  const [testingUrl2, setTestingUrl2] = useState(false);
+  const [testResult1, setTestResult1] = useState<{ success?: boolean; message?: string } | null>(null);
+  const [testResult2, setTestResult2] = useState<{ success?: boolean; message?: string } | null>(null);
 
   const [newBlock, setNewBlock] = useState({
     title: 'Data Bloqueada / Evento',
@@ -47,10 +54,14 @@ export default function AdminAgendaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const fetchAgenda = async () => {
-    setLoading(true);
+  const fetchAgenda = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
-      const res = await fetch('/api/admin/agenda');
+      const res = await fetch('/api/admin/agenda', { cache: 'no-store' });
       const data = await res.json();
       if (res.ok) {
         setBlocks(data.blocks || []);
@@ -69,6 +80,7 @@ export default function AdminAgendaPage() {
       console.error(err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -115,6 +127,51 @@ export default function AdminAgendaPage() {
     }
   };
 
+  const handleTestUrl = async (urlNumber: 1 | 2) => {
+    const url = urlNumber === 1 ? gcalUrls.googleCalendarUrl1 : gcalUrls.googleCalendarUrl2;
+    if (!url) {
+      alert('Por favor, cole a URL do Google Agenda antes de testar.');
+      return;
+    }
+
+    if (urlNumber === 1) {
+      setTestingUrl1(true);
+      setTestResult1(null);
+    } else {
+      setTestingUrl2(true);
+      setTestResult2(null);
+    }
+
+    try {
+      const res = await fetch('/api/admin/agenda/test-gcal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (urlNumber === 1) {
+          setTestResult1({ success: true, message: data.message });
+        } else {
+          setTestResult2({ success: true, message: data.message });
+        }
+      } else {
+        if (urlNumber === 1) {
+          setTestResult1({ success: false, message: data.error || 'Erro ao conectar.' });
+        } else {
+          setTestResult2({ success: false, message: data.error || 'Erro ao conectar.' });
+        }
+      }
+    } catch (err: any) {
+      const errorStr = `Falha de conexão: ${err.message}`;
+      if (urlNumber === 1) setTestResult1({ success: false, message: errorStr });
+      else setTestResult2({ success: false, message: errorStr });
+    } finally {
+      if (urlNumber === 1) setTestingUrl1(false);
+      else setTestingUrl2(false);
+    }
+  };
+
   const handleSaveGcal = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingGcal(true);
@@ -126,7 +183,7 @@ export default function AdminAgendaPage() {
       });
       if (res.ok) {
         setGcalModalOpen(false);
-        fetchAgenda();
+        fetchAgenda(true);
       }
     } catch (err) {
       console.error(err);
@@ -135,8 +192,17 @@ export default function AdminAgendaPage() {
     }
   };
 
+  const formatDateBR = (isoDate: string) => {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return isoDate;
+  };
+
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -144,36 +210,25 @@ export default function AdminAgendaPage() {
             <CalendarIcon className="w-6 h-6 text-fuchsia-400" />
             Agenda & Disponibilidade de Eventos
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Gerenciamento de agenda, integração com Google Calendar e bloqueio automático de datas e horários.
+          <p className="text-xs text-slate-400 mt-1">
+            Gerenciamento de agenda, integração com Google Calendar, Sistema de Contratos e bloqueios de datas e horários.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={() => setGcalModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 font-semibold text-xs border border-white/10 flex items-center gap-1.5 transition-all"
+            className="px-4 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 font-bold text-xs border border-cyan-500/30 flex items-center gap-1.5 transition-all shadow-sm"
           >
-            <CalendarCheck2 className="w-3.5 h-3.5 text-cyan-400" />
+            <CalendarCheck2 className="w-4 h-4 text-cyan-400" />
             <span>Google Calendar Sync</span>
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              setNewBlock({
-                title: 'Data Bloqueada / Evento',
-                date: new Date().toISOString().split('T')[0],
-                startTime: '',
-                endTime: '',
-                isFullDay: true,
-                reason: 'Evento confirmado / Sem disponibilidade',
-              });
-              setErrorMsg('');
-              setModalOpen(true);
-            }}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 text-white font-bold text-xs tracking-wide shadow-md shadow-fuchsia-600/30 flex items-center gap-1.5 transition-all"
+            onClick={() => setModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg shadow-fuchsia-600/20 flex items-center gap-1.5 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Bloquear Data / Horário</span>
@@ -181,54 +236,52 @@ export default function AdminAgendaPage() {
         </div>
       </div>
 
-      {/* Google Calendar Sync Status Banner */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-purple-950/20 to-black/40 border border-cyan-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      {/* Sync Status Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-[#10121d] to-cyan-950/30 border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0">
-            <CalendarCheck2 className="w-4 h-4 text-cyan-400" />
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
+            <CalendarCheck2 className="w-5 h-5 text-cyan-400" />
           </div>
           <div>
-            <div className="text-xs font-bold text-white flex items-center gap-2">
-              <span>Sincronização Google Calendar</span>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-white">Sincronização Google Calendar</span>
               {gcalUrls.googleCalendarUrl1 || gcalUrls.googleCalendarUrl2 ? (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
                   Ativo ({googleCalendarEvents.length} eventos detectados)
                 </span>
               ) : (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
-                  URLs iCal não configuradas
+                  Link iCal não configurado
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400">
-              Contas integradas:{' '}
-              <span className="text-slate-300 font-mono">roboledpartner@gmail.com</span> &{' '}
-              <span className="text-slate-300 font-mono">luanchaves1011@gmail.com</span>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Eventos cadastrados no Google Agenda e Sistema de Contratos bloqueiam datas e horários no site de cotação.
             </p>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => fetchAgenda()}
-          disabled={loading}
-          className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-[11px] font-medium border border-white/5 flex items-center gap-1.5"
+          onClick={() => fetchAgenda(true)}
+          disabled={refreshing}
+          className="px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-white/5 transition-all shrink-0"
         >
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-          <span>Atualizar Agora</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-cyan-400' : ''}`} />
+          <span>{refreshing ? 'Atualizando...' : 'Atualizar Agora'}</span>
         </button>
       </div>
 
-      {/* Grid: 4 Columns (Google Calendar Events + Contract System + Confirmed Quotes + Manual Blocks) */}
+      {/* 4-Columns Grid: Google Calendar | Sistema Contratos | Cotações Confirmadas | Bloqueios Manuais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Google Calendar Sync Feed */}
+        {/* Google Calendar Feed */}
         <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3 flex flex-col">
           <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
             <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
               <CalendarCheck2 className="w-3.5 h-3.5 text-cyan-400" />
               Google Calendar ({googleCalendarEvents.length})
             </h2>
-            <span className="text-[10px] text-cyan-400 font-semibold">GCal</span>
+            <span className="text-[10px] text-cyan-400 font-semibold">iCal Feed</span>
           </div>
 
           <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 flex-1">
@@ -240,30 +293,36 @@ export default function AdminAgendaPage() {
               googleCalendarEvents.map((ev, idx) => (
                 <div
                   key={idx}
-                  className="p-3 rounded-xl bg-white/[0.02] border border-cyan-500/20 hover:border-cyan-500/40 transition-all space-y-1"
+                  className="p-3 rounded-xl bg-white/[0.02] border border-cyan-500/20 hover:border-cyan-500/40 transition-all space-y-1.5"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs truncate max-w-[150px]">{ev.title}</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 font-semibold border border-cyan-500/20">
-                      {ev.isFullDay ? 'Dia Todo' : `${ev.startTime} às ${ev.endTime || 'fim'}`}
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="font-bold text-white text-xs line-clamp-1">{ev.title}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 font-semibold border border-cyan-500/20 shrink-0">
+                      {ev.isFullDay ? 'Dia Todo' : `${ev.startTime || ''} às ${ev.endTime || 'fim'}`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-slate-400">
                     <span className="flex items-center gap-1 text-slate-300 font-mono">
                       <CalendarIcon className="w-3 h-3 text-cyan-400" />
-                      {ev.date}
+                      {formatDateBR(ev.date)}
                     </span>
-                    <span className="truncate max-w-[100px] text-[9px] text-slate-500">{ev.calendarSource}</span>
+                    <span className="truncate max-w-[90px] text-[9px] text-slate-500">{ev.calendarSource}</span>
                   </div>
+                  {ev.location && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
+                      <MapPin className="w-3 h-3 text-fuchsia-400 shrink-0" />
+                      <span className="truncate">{ev.location}</span>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
               <div className="p-6 text-center text-xs text-slate-400 space-y-2">
-                <p>Nenhum evento detectado nas agendas do Google.</p>
+                <p>Nenhum evento detectado no Google Calendar.</p>
                 <button
                   type="button"
                   onClick={() => setGcalModalOpen(true)}
-                  className="text-[11px] text-cyan-400 hover:underline"
+                  className="text-[11px] text-cyan-400 hover:underline font-semibold"
                 >
                   Configurar Links iCal (.ics) →
                 </button>
@@ -291,21 +350,27 @@ export default function AdminAgendaPage() {
               contractEvents.map((c) => (
                 <div
                   key={c.id}
-                  className="p-3 rounded-xl bg-white/[0.02] border border-fuchsia-500/20 hover:border-fuchsia-500/40 transition-all space-y-1"
+                  className="p-3 rounded-xl bg-white/[0.02] border border-fuchsia-500/20 hover:border-fuchsia-500/40 transition-all space-y-1.5"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs truncate max-w-[150px]">{c.clientName}</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-300 font-semibold border border-fuchsia-500/20">
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="font-bold text-white text-xs truncate max-w-[140px]">{c.clientName}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-300 font-semibold border border-fuchsia-500/20 shrink-0">
                       {c.eventTime || 'Horário agendado'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-slate-400">
                     <span className="flex items-center gap-1 text-slate-300 font-mono">
                       <CalendarIcon className="w-3 h-3 text-fuchsia-400" />
-                      {c.eventDate}
+                      {formatDateBR(c.eventDate)}
                     </span>
-                    <span className="text-[10px] text-slate-400 truncate max-w-[100px]">{c.addressCity || c.eventType}</span>
+                    <span className="text-[9px] text-emerald-400 font-semibold">{c.status}</span>
                   </div>
+                  {c.location && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
+                      <MapPin className="w-3 h-3 text-fuchsia-400 shrink-0" />
+                      <span className="truncate">{c.location}</span>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
@@ -314,18 +379,17 @@ export default function AdminAgendaPage() {
                 <a
                   href="https://contrato.roboledpartner.com.br"
                   target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] text-fuchsia-400 hover:underline"
+                  rel="noreferrer"
+                  className="text-[11px] text-fuchsia-400 hover:underline font-semibold inline-block"
                 >
-                  <span>Abrir Sistema Contratos</span>
-                  <ExternalLink className="w-3 h-3" />
+                  Abrir Sistema Contratos ↗
                 </a>
               </div>
             )}
           </div>
         </div>
 
-        {/* Confirmed Quotes from System */}
+        {/* Cotações Confirmadas */}
         <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3 flex flex-col">
           <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
             <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
@@ -344,38 +408,38 @@ export default function AdminAgendaPage() {
               confirmedQuotes.map((q) => (
                 <div
                   key={q.id}
-                  className="p-3 rounded-xl bg-white/[0.02] border border-emerald-500/20 hover:border-emerald-500/40 transition-all flex items-center justify-between"
+                  className="p-3 rounded-xl bg-white/[0.02] border border-emerald-500/20 hover:border-emerald-500/40 transition-all space-y-1.5"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-white text-xs">{q.clientName}</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
-                        #{q.code}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                      <span className="flex items-center gap-1 text-slate-300 font-mono">
-                        <CalendarIcon className="w-3 h-3 text-cyan-400" />
-                        {q.eventDate} {q.eventTime ? `às ${q.eventTime}` : ''}
-                      </span>
-                      <span>• {q.addressCity}</span>
-                    </div>
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="font-bold text-white text-xs truncate max-w-[140px]">{q.clientName}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-semibold border border-emerald-500/20 shrink-0">
+                      {q.eventTime || 'Horário Definido'}
+                    </span>
                   </div>
-
-                  <span className="font-bold text-xs text-emerald-400">
-                    {formatCurrencyBRL(q.totalAmount)}
-                  </span>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="flex items-center gap-1 text-slate-300 font-mono">
+                      <CalendarIcon className="w-3 h-3 text-emerald-400" />
+                      {formatDateBR(q.eventDate)}
+                    </span>
+                    <span className="text-emerald-400 font-bold">{formatCurrencyBRL(q.totalAmount)}</span>
+                  </div>
+                  {q.eventCity && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
+                      <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span className="truncate">{q.eventCity} - {q.eventState}</span>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
               <div className="p-6 text-center text-xs text-slate-400">
-                Nenhum orçamento com status "Confirmado".
+                Nenhum orçamento com status &quot;Confirmado&quot;.
               </div>
             )}
           </div>
         </div>
 
-        {/* Manual Date Blocks */}
+        {/* Bloqueios Manuais */}
         <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3 flex flex-col">
           <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
             <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
@@ -404,7 +468,7 @@ export default function AdminAgendaPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                      <span className="text-slate-300 font-mono">{b.date}</span>
+                      <span className="text-slate-300 font-mono">{formatDateBR(b.date)}</span>
                       {b.reason && <span className="italic truncate max-w-[110px]">— {b.reason}</span>}
                     </div>
                   </div>
@@ -453,39 +517,91 @@ export default function AdminAgendaPage() {
               </div>
               <ol className="list-decimal pl-4 space-y-0.5 text-[11px] text-cyan-200/90">
                 <li>Abra o <strong>Google Agenda</strong> (calendar.google.com);</li>
-                <li>Na barra lateral esquerda, passe o mouse na sua agenda e clique nos <strong>3 pontinhos → Configurações</strong>;</li>
-                <li>Role até a seção <strong>"Integrar agenda"</strong>;</li>
-                <li>Copie o link do campo <strong>"Endereço secreto no formato iCal"</strong> (termina com .ics).</li>
+                <li>Clique na agenda <strong>Robo Led Partner</strong> no menu lateral esquerdo;</li>
+                <li>Role a página até a seção <strong>&quot;Integrar agenda&quot;</strong>;</li>
+                <li>Copie o campo <strong>&quot;Endereço secreto no formato iCal&quot;</strong> (termina com .ics).</li>
               </ol>
             </div>
 
             <form onSubmit={handleSaveGcal} className="space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300 flex items-center justify-between">
-                  <span>URL iCal (.ics) — roboledpartner@gmail.com</span>
-                  <span className="text-[10px] text-slate-500">Google Calendar 1</span>
-                </label>
+              {/* Google Calendar 1 */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-300">
+                    URL iCal (.ics) — Robo Led Partner
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleTestUrl(1)}
+                    disabled={testingUrl1 || !gcalUrls.googleCalendarUrl1}
+                    className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {testingUrl1 ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                    <span>Testar Link</span>
+                  </button>
+                </div>
                 <input
-                  type="url"
-                  placeholder="https://calendar.google.com/calendar/ical/roboledpartner%40gmail.com/private-.../basic.ics"
+                  type="text"
+                  placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
                   value={gcalUrls.googleCalendarUrl1}
-                  onChange={(e) => setGcalUrls({ ...gcalUrls, googleCalendarUrl1: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px]"
+                  onChange={(e) => {
+                    setGcalUrls({ ...gcalUrls, googleCalendarUrl1: e.target.value.trim() });
+                    setTestResult1(null);
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px] bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
                 />
+                {testResult1 && (
+                  <div
+                    className={`p-2 rounded-lg text-[11px] border flex items-center gap-1.5 ${
+                      testResult1.success
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                        : 'bg-red-500/10 text-red-300 border-red-500/30'
+                    }`}
+                  >
+                    {testResult1.success ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                    <span>{testResult1.message}</span>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300 flex items-center justify-between">
-                  <span>URL iCal (.ics) — luanchaves1011@gmail.com</span>
-                  <span className="text-[10px] text-slate-500">Google Calendar 2</span>
-                </label>
+              {/* Google Calendar 2 */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-300">
+                    URL iCal (.ics) — 2ª Agenda (Opcional)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleTestUrl(2)}
+                    disabled={testingUrl2 || !gcalUrls.googleCalendarUrl2}
+                    className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {testingUrl2 ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                    <span>Testar Link</span>
+                  </button>
+                </div>
                 <input
-                  type="url"
-                  placeholder="https://calendar.google.com/calendar/ical/luanchaves1011%40gmail.com/private-.../basic.ics"
+                  type="text"
+                  placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
                   value={gcalUrls.googleCalendarUrl2}
-                  onChange={(e) => setGcalUrls({ ...gcalUrls, googleCalendarUrl2: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px]"
+                  onChange={(e) => {
+                    setGcalUrls({ ...gcalUrls, googleCalendarUrl2: e.target.value.trim() });
+                    setTestResult2(null);
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px] bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
                 />
+                {testResult2 && (
+                  <div
+                    className={`p-2 rounded-lg text-[11px] border flex items-center gap-1.5 ${
+                      testResult2.success
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                        : 'bg-red-500/10 text-red-300 border-red-500/30'
+                    }`}
+                  >
+                    {testResult2.success ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                    <span>{testResult2.message}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -529,45 +645,45 @@ export default function AdminAgendaPage() {
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             <form onSubmit={handleSaveBlock} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Identificação / Título *</label>
+                <label className="font-semibold text-slate-300">Título / Motivo do Bloqueio *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Casamento em Campinas, Manutenção, Folga..."
                   value={newBlock.title}
                   onChange={(e) => setNewBlock({ ...newBlock, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl font-medium"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Data do Bloqueio *</label>
+                <label className="font-semibold text-slate-300">Data do Evento / Bloqueio *</label>
                 <input
                   type="date"
                   required
                   value={newBlock.date}
                   onChange={(e) => setNewBlock({ ...newBlock, date: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl font-medium"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white"
                 />
               </div>
 
-              <div className="space-y-2 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newBlock.isFullDay}
-                    onChange={(e) => setNewBlock({ ...newBlock, isFullDay: e.target.checked })}
-                    className="rounded text-fuchsia-600 focus:ring-fuchsia-500"
-                  />
-                  <span className="font-semibold text-slate-300">Bloquear o Dia Inteiro</span>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="fullDay"
+                  checked={newBlock.isFullDay}
+                  onChange={(e) => setNewBlock({ ...newBlock, isFullDay: e.target.checked })}
+                  className="w-4 h-4 rounded text-fuchsia-600 bg-black/40 border-white/10 focus:ring-0"
+                />
+                <label htmlFor="fullDay" className="text-slate-300 cursor-pointer">
+                  Bloquear o dia inteiro
                 </label>
               </div>
 
@@ -579,7 +695,7 @@ export default function AdminAgendaPage() {
                       type="time"
                       value={newBlock.startTime}
                       onChange={(e) => setNewBlock({ ...newBlock, startTime: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white"
                     />
                   </div>
                   <div className="space-y-1">
@@ -588,37 +704,37 @@ export default function AdminAgendaPage() {
                       type="time"
                       value={newBlock.endTime}
                       onChange={(e) => setNewBlock({ ...newBlock, endTime: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white"
                     />
                   </div>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Motivo / Mensagem ao Cliente (Opcional)</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Agenda lotada para esta data"
+                <label className="font-semibold text-slate-300">Observações adicionais (opcional)</label>
+                <textarea
+                  rows={2}
                   value={newBlock.reason}
                   onChange={(e) => setNewBlock({ ...newBlock, reason: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl font-medium"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white resize-none"
                 />
               </div>
 
-              <div className="flex justify-end pt-3">
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 hover:bg-white/10 text-xs font-semibold"
+                >
+                  Cancelar
+                </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 text-white font-bold tracking-wide shadow-md flex items-center gap-1.5"
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg shadow-fuchsia-600/30 flex items-center gap-1.5"
                 >
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>Salvar Bloqueio</span>
-                    </>
-                  )}
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Salvar Bloqueio</span>
                 </button>
               </div>
             </form>
