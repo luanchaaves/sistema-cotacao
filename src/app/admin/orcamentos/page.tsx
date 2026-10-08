@@ -21,12 +21,14 @@ import {
   XCircle,
   AlertCircle,
   Phone,
+  Trash2,
 } from 'lucide-react';
 import { formatCurrencyBRL } from '@/lib/calculator';
 
 export default function AdminQuotesPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState('');
@@ -70,6 +72,33 @@ export default function AdminQuotesPage() {
     e.preventDefault();
     setPage(1);
     fetchQuotes();
+  };
+
+  const handleDeleteQuote = async (id: string, code: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir permanentemente o orçamento #${code}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/quotes?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setQuotes((prev) => prev.filter((q) => q.id !== id));
+        setTotalQuotes((prev) => Math.max(0, prev - 1));
+        if (selectedQuote && selectedQuote.id === id) {
+          setSelectedQuote(null);
+        }
+      } else {
+        alert('Erro ao excluir orçamento.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao comunicar com o servidor.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
@@ -264,6 +293,20 @@ export default function AdminQuotesPage() {
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Link>
+
+                        <button
+                          type="button"
+                          disabled={deletingId === q.id}
+                          onClick={() => handleDeleteQuote(q.id, q.code)}
+                          className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-colors disabled:opacity-50"
+                          title="Excluir Orçamento"
+                        >
+                          {deletingId === q.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -486,6 +529,39 @@ export default function AdminQuotesPage() {
                 <p className="text-slate-200 italic">{selectedQuote.notes}</p>
               </div>
             )}
+
+            {/* Modal Bottom Actions */}
+            <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => handleDeleteQuote(selectedQuote.id, selectedQuote.code)}
+                className="px-4 py-2.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 font-bold text-xs flex items-center gap-1.5 transition-all"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
+                <span>Excluir Orçamento Permanentemente</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://api.whatsapp.com/send/?phone=${selectedQuote.clientWhatsapp.replace(/\D/g, '')}&text=Olá ${encodeURIComponent(selectedQuote.clientName)}, tudo bem? Falamos da Robô LED Partner sobre o seu orçamento %23${selectedQuote.code}!`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>WhatsApp do Cliente</span>
+                </a>
+
+                <Link
+                  href={`/orcamento/${selectedQuote.code}`}
+                  target="_blank"
+                  className="px-4 py-2.5 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold text-xs flex items-center gap-1.5 shadow"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Ver Proposta Pública</span>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       )}

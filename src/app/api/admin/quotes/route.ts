@@ -111,3 +111,44 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = await getAdminSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get('id');
+
+    if (!id) {
+      try {
+        const body = await req.json();
+        id = body.id;
+      } catch {
+        // ignore JSON parse error if body was empty
+      }
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID do orçamento é obrigatório para exclusão' }, { status: 400 });
+    }
+
+    await prisma.quote.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Orçamento excluído com sucesso.',
+    });
+  } catch (err: any) {
+    console.error('Error deleting quote:', err);
+    return NextResponse.json(
+      { error: 'Erro ao excluir orçamento', details: err.message },
+      { status: 500 }
+    );
+  }
+}
+

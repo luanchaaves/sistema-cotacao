@@ -15,6 +15,7 @@ import {
   LogOut,
   ExternalLink,
   ShieldCheck,
+  Calendar,
   Menu,
   X,
   Loader2,
@@ -75,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { label: 'Orçamentos', href: '/admin/orcamentos', icon: FileSpreadsheet },
-    { label: 'Agenda & Datas', href: '/admin/agenda', icon: FileSpreadsheet },
+    { label: 'Agenda & Datas', href: '/admin/agenda', icon: Calendar },
     { label: 'Configurações', href: '/admin/configuracoes', icon: Settings },
     { label: 'Serviços & Atrações', href: '/admin/servicos', icon: Sparkles },
     { label: 'Personagens Vivos', href: '/admin/personagens', icon: Users },
@@ -86,10 +87,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-[#090a10] text-slate-100 flex flex-col md:flex-row">
       {/* Mobile Top Header */}
-      <header className="md:hidden glass-panel border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-50 bg-[#090a10]/90">
-        <div className="flex items-center gap-2">
-          <Image src="/images/logo-header.png" alt="Logo" width={32} height={32} />
-          <span className="font-bold text-sm text-white">ROBÔ LED <span className="text-fuchsia-400">ADMIN</span></span>
+      <header className="md:hidden glass-panel border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-50 bg-[#090a10]/95 backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-9 h-9 rounded-xl bg-purple-950/60 p-0.5 border border-fuchsia-500/30 flex items-center justify-center shrink-0">
+            <Image src="/images/logo-official.png" alt="Logo" width={32} height={32} className="object-contain" />
+          </div>
+          <span className="font-extrabold text-sm text-white">ROBÔ LED <span className="text-fuchsia-400">ADMIN</span></span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -108,11 +111,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="space-y-6">
           {/* Logo brand */}
           <div className="flex items-center gap-3 px-2">
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-600/30 to-purple-900/40 p-1 border border-fuchsia-500/30 flex items-center justify-center">
-              <Image src="/images/logo-header.png" alt="Robô LED Partner" width={36} height={36} />
+            <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-purple-950/80 to-black p-1 border border-fuchsia-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(246,53,244,0.3)]">
+              <Image src="/images/logo-official.png" alt="Robô LED Partner" width={40} height={40} className="object-contain" />
             </div>
             <div>
-              <span className="font-extrabold text-sm text-white tracking-wider block">
+              <span className="font-black text-sm text-white tracking-wider block">
                 ROBÔ LED <span className="text-fuchsia-400">ADMIN</span>
               </span>
               <span className="text-[10px] text-slate-400 block font-medium">Gestão Comercial</span>

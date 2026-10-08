@@ -49,18 +49,18 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-md space-y-6">
         {/* Brand */}
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-600/30 to-purple-900/40 p-1 border border-fuchsia-500/30 flex items-center justify-center mx-auto shadow-xl">
+        <div className="text-center space-y-3">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-950/80 to-black p-2 border border-fuchsia-500/40 flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(246,53,244,0.35)]">
             <Image
-              src="/images/logo-header.png"
+              src="/images/logo-official.png"
               alt="Robô LED Partner"
-              width={56}
-              height={56}
+              width={72}
+              height={72}
               className="object-contain"
             />
           </div>
           <h1 className="text-2xl font-black text-white tracking-wider flex items-center justify-center gap-1.5">
-            ROBÔ LED <span className="text-fuchsia-400">PARTNER</span>
+            ROBÔ LED <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-400">PARTNER</span>
           </h1>
           <p className="text-xs text-slate-400 font-medium">Painel Administrativo & Gestão de Cotações</p>
         </div>

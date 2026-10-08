@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Outfit, Poppins } from 'next/font/google';
 import './globals.css';
 
@@ -15,8 +15,15 @@ const poppins = Poppins({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#090a10',
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://roboledpartner.com.br'),
+  metadataBase: new URL('https://cotacao.roboledpartner.com.br'),
   title: 'Cotação Automática de Eventos | Robô LED Partner',
   description:
     'Calcule seu orçamento personalizado em segundos com Robô de LED, Personagens Vivos e Efeitos Especiais da Robô LED Partner para Casamentos, Aniversários, 15 Anos e Corporativos.',
@@ -39,11 +46,11 @@ export const metadata: Metadata = {
     title: 'Robô LED Partner — Cotação Automática para o Seu Evento',
     description:
       'Gere seu orçamento comercial online em instantes. Robô de LED, Personagens, Efeitos e Frete calculado automaticamente.',
-    url: 'https://roboledpartner.com.br',
+    url: 'https://cotacao.roboledpartner.com.br',
     siteName: 'Robô LED Partner',
     images: [
       {
-        url: '/images/robo-hero.png',
+        url: '/images/logo-official.png',
         width: 1200,
         height: 630,
         alt: 'Robô LED Partner — Atrações para Eventos',
@@ -56,11 +63,11 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Cotação Automática | Robô LED Partner',
     description: 'Calcule seu orçamento comercial para eventos em tempo real.',
-    images: ['/images/robo-hero.png'],
+    images: ['/images/logo-official.png'],
   },
   icons: {
-    icon: '/images/logo-header.png',
-    apple: '/images/logo-header.png',
+    icon: '/images/logo-official.png',
+    apple: '/images/logo-official.png',
   },
 };
 

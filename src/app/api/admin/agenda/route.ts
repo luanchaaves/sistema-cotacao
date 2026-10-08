@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminSession } from '@/lib/auth';
 import { fetchGoogleCalendarEvents, GoogleCalendarEvent } from '@/lib/gcalendar';
+import { fetchContractSystemEvents, ContractEvent } from '@/lib/contractSync';
 
 export async function GET(req: NextRequest) {
   try {
@@ -52,13 +53,23 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Fetch Contract System Events
+    let contractEvents: ContractEvent[] = [];
+    try {
+      contractEvents = await fetchContractSystemEvents(setting?.sistemaContratoUrl, true);
+    } catch (err) {
+      console.warn('Contract system fetch warning in admin:', err);
+    }
+
     return NextResponse.json({
       blocks,
       confirmedQuotes,
       googleCalendarEvents,
+      contractEvents,
       setting: {
         googleCalendarUrl1: setting?.googleCalendarUrl1,
         googleCalendarUrl2: setting?.googleCalendarUrl2,
+        sistemaContratoUrl: setting?.sistemaContratoUrl,
         maxEventsPerDay: setting?.maxEventsPerDay || 2,
       },
     });

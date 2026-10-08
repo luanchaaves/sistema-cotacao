@@ -19,25 +19,25 @@ export function Header({ setting }: HeaderProps) {
     <header className="sticky top-0 z-50 w-full glass-panel border-b border-white/10 bg-[#090a10]/80 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
         {/* Brand Logo & Name */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-fuchsia-600/30 to-purple-900/40 p-1 border border-fuchsia-500/30 flex items-center justify-center shadow-lg group-hover:border-fuchsia-500/60 transition-all">
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group">
+          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950/60 to-black p-1 border border-fuchsia-500/40 flex items-center justify-center shadow-[0_0_15px_rgba(246,53,244,0.25)] group-hover:border-fuchsia-400 group-hover:shadow-[0_0_20px_rgba(246,53,244,0.45)] transition-all shrink-0">
             <Image
-              src="/images/logo-header.png"
+              src="/images/logo-official.png"
               alt="Robô LED Partner"
-              width={48}
-              height={48}
-              className="object-contain"
+              width={56}
+              height={56}
+              className="object-contain w-full h-full"
               priority
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-lg tracking-wider text-white flex items-center gap-1.5">
-              ROBÔ LED <span className="text-fuchsia-400">PARTNER</span>
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span className="font-black text-base sm:text-lg tracking-wider text-white flex items-center gap-1.5">
+              ROBÔ LED <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-400">PARTNER</span>
+              <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
             </span>
-            <span className="text-xs text-slate-400 tracking-wide font-medium flex items-center gap-1">
+            <span className="text-[11px] sm:text-xs text-slate-400 tracking-wide font-medium flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-fuchsia-400" />
-              Experiências & Atrações para Eventos
+              <span>Atrações & Personagens para Eventos</span>
             </span>
           </div>
         </Link>

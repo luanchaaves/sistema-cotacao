@@ -24,6 +24,7 @@ export default function AdminAgendaPage() {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [confirmedQuotes, setConfirmedQuotes] = useState<any[]>([]);
   const [googleCalendarEvents, setGoogleCalendarEvents] = useState<any[]>([]);
+  const [contractEvents, setContractEvents] = useState<any[]>([]);
   const [setting, setSetting] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,6 +56,7 @@ export default function AdminAgendaPage() {
         setBlocks(data.blocks || []);
         setConfirmedQuotes(data.confirmedQuotes || []);
         setGoogleCalendarEvents(data.googleCalendarEvents || []);
+        setContractEvents(data.contractEvents || []);
         if (data.setting) {
           setSetting(data.setting);
           setGcalUrls({
@@ -217,19 +219,19 @@ export default function AdminAgendaPage() {
         </button>
       </div>
 
-      {/* Grid: 3 Columns (Google Calendar Events + Confirmed Quotes + Manual Blocks) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* Grid: 4 Columns (Google Calendar Events + Contract System + Confirmed Quotes + Manual Blocks) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Google Calendar Sync Feed */}
-        <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3">
+        <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3 flex flex-col">
           <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
             <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
               <CalendarCheck2 className="w-3.5 h-3.5 text-cyan-400" />
               Google Calendar ({googleCalendarEvents.length})
             </h2>
-            <span className="text-[10px] text-slate-400">Sincronizado</span>
+            <span className="text-[10px] text-cyan-400 font-semibold">GCal</span>
           </div>
 
-          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 flex-1">
             {loading ? (
               <div className="py-10 text-center">
                 <Loader2 className="w-5 h-5 text-cyan-400 animate-spin mx-auto" />
@@ -241,23 +243,23 @@ export default function AdminAgendaPage() {
                   className="p-3 rounded-xl bg-white/[0.02] border border-cyan-500/20 hover:border-cyan-500/40 transition-all space-y-1"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs truncate max-w-[180px]">{ev.title}</span>
+                    <span className="font-bold text-white text-xs truncate max-w-[150px]">{ev.title}</span>
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 font-semibold border border-cyan-500/20">
                       {ev.isFullDay ? 'Dia Todo' : `${ev.startTime} às ${ev.endTime || 'fim'}`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-slate-400">
-                    <span className="flex items-center gap-1 text-slate-300">
+                    <span className="flex items-center gap-1 text-slate-300 font-mono">
                       <CalendarIcon className="w-3 h-3 text-cyan-400" />
                       {ev.date}
                     </span>
-                    <span className="truncate max-w-[120px] text-[9px] text-slate-500">{ev.calendarSource}</span>
+                    <span className="truncate max-w-[100px] text-[9px] text-slate-500">{ev.calendarSource}</span>
                   </div>
                 </div>
               ))
             ) : (
               <div className="p-6 text-center text-xs text-slate-400 space-y-2">
-                <p>Nenhum evento futuro encontrado nas agendas do Google.</p>
+                <p>Nenhum evento detectado nas agendas do Google.</p>
                 <button
                   type="button"
                   onClick={() => setGcalModalOpen(true)}
@@ -270,17 +272,70 @@ export default function AdminAgendaPage() {
           </div>
         </div>
 
+        {/* Sistema de Contratos Feed */}
+        <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3 flex flex-col">
+          <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
+            <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-fuchsia-400" />
+              Sistema Contratos ({contractEvents.length})
+            </h2>
+            <span className="text-[10px] text-fuchsia-400 font-semibold">Contratos</span>
+          </div>
+
+          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 flex-1">
+            {loading ? (
+              <div className="py-10 text-center">
+                <Loader2 className="w-5 h-5 text-fuchsia-400 animate-spin mx-auto" />
+              </div>
+            ) : contractEvents.length > 0 ? (
+              contractEvents.map((c) => (
+                <div
+                  key={c.id}
+                  className="p-3 rounded-xl bg-white/[0.02] border border-fuchsia-500/20 hover:border-fuchsia-500/40 transition-all space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white text-xs truncate max-w-[150px]">{c.clientName}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-fuchsia-500/10 text-fuchsia-300 font-semibold border border-fuchsia-500/20">
+                      {c.eventTime || 'Horário agendado'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="flex items-center gap-1 text-slate-300 font-mono">
+                      <CalendarIcon className="w-3 h-3 text-fuchsia-400" />
+                      {c.eventDate}
+                    </span>
+                    <span className="text-[10px] text-slate-400 truncate max-w-[100px]">{c.addressCity || c.eventType}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center text-xs text-slate-400 space-y-2">
+                <p>Nenhum contrato ativo sincronizado no momento.</p>
+                <a
+                  href="https://contrato.roboledpartner.com.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-fuchsia-400 hover:underline"
+                >
+                  <span>Abrir Sistema Contratos</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Confirmed Quotes from System */}
-        <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3">
+        <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3 flex flex-col">
           <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
             <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               Cotações Confirmadas ({confirmedQuotes.length})
             </h2>
-            <span className="text-[10px] text-slate-400">Sistema</span>
+            <span className="text-[10px] text-emerald-400 font-semibold">Cotações</span>
           </div>
 
-          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 flex-1">
             {loading ? (
               <div className="py-10 text-center">
                 <Loader2 className="w-5 h-5 text-emerald-400 animate-spin mx-auto" />
@@ -299,7 +354,7 @@ export default function AdminAgendaPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                      <span className="flex items-center gap-1 text-slate-300">
+                      <span className="flex items-center gap-1 text-slate-300 font-mono">
                         <CalendarIcon className="w-3 h-3 text-cyan-400" />
                         {q.eventDate} {q.eventTime ? `às ${q.eventTime}` : ''}
                       </span>
@@ -321,16 +376,16 @@ export default function AdminAgendaPage() {
         </div>
 
         {/* Manual Date Blocks */}
-        <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3">
+        <div className="glass-panel rounded-2xl p-4 border border-white/5 space-y-3 flex flex-col">
           <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
             <h2 className="text-xs font-bold text-white flex items-center gap-1.5">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
               Bloqueios Manuais ({blocks.length})
             </h2>
-            <span className="text-[10px] text-slate-400">Interno</span>
+            <span className="text-[10px] text-amber-400 font-semibold">Manual</span>
           </div>
 
-          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1 flex-1">
             {loading ? (
               <div className="py-10 text-center">
                 <Loader2 className="w-5 h-5 text-amber-400 animate-spin mx-auto" />
@@ -349,8 +404,8 @@ export default function AdminAgendaPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                      <span className="text-slate-300">{b.date}</span>
-                      {b.reason && <span className="italic truncate max-w-[130px]">— {b.reason}</span>}
+                      <span className="text-slate-300 font-mono">{b.date}</span>
+                      {b.reason && <span className="italic truncate max-w-[110px]">— {b.reason}</span>}
                     </div>
                   </div>
 

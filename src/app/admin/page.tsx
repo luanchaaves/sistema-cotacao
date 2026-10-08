@@ -13,29 +13,54 @@ import {
   ExternalLink,
   Loader2,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import { formatCurrencyBRL } from '@/lib/calculator';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const loadStats = async () => {
+    try {
+      const res = await fetch('/api/admin/stats');
+      const data = await res.json();
+      if (res.ok) {
+        setStats(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadStats() {
-      try {
-        const res = await fetch('/api/admin/stats');
-        const data = await res.json();
-        if (res.ok) {
-          setStats(data);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadStats();
   }, []);
+
+  const handleDeleteQuote = async (id: string, code: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o orçamento #${code}?`)) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/quotes?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        loadStats();
+      } else {
+        alert('Erro ao excluir orçamento.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao comunicar com o servidor.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -211,6 +236,20 @@ export default function AdminDashboardPage() {
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Link>
+
+                        <button
+                          type="button"
+                          disabled={deletingId === q.id}
+                          onClick={() => handleDeleteQuote(q.id, q.code)}
+                          className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-colors disabled:opacity-50"
+                          title="Excluir Orçamento"
+                        >
+                          {deletingId === q.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>

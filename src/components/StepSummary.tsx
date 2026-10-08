@@ -117,19 +117,20 @@ export function StepSummary({
 
         {/* Commercial Proposal Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-600/20 to-cyan-600/20 p-1 border border-white/10 flex items-center justify-center">
+          {/* Brand Header */}
+          <div className="flex items-center gap-3.5">
+            <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-950/80 to-black p-1 border border-fuchsia-500/40 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(246,53,244,0.3)]">
               <Image
-                src="/images/logo-header.png"
+                src="/images/logo-official.png"
                 alt="Robô LED Partner"
-                width={44}
-                height={44}
-                className="object-contain"
+                width={52}
+                height={52}
+                className="object-contain w-full h-full"
               />
             </div>
             <div>
-              <span className="font-extrabold text-base sm:text-lg text-white tracking-wider flex items-center gap-2">
-                ROBÔ LED <span className="text-fuchsia-400">PARTNER</span>
+              <span className="font-black text-base sm:text-lg text-white tracking-wider flex items-center gap-2">
+                ROBÔ LED <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-400">PARTNER</span>
               </span>
               <span className="text-xs text-slate-400 block font-medium">
                 Proposta Comercial de Atrações para Eventos

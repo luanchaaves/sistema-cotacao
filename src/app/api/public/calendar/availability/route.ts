@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureDatabaseSeeded } from '@/lib/seed';
 import { fetchGoogleCalendarEvents, GoogleCalendarEvent } from '@/lib/gcalendar';
+import { fetchContractSystemEvents, ContractEvent } from '@/lib/contractSync';
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,6 +58,17 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // 1b. Fetch Contract System Events (https://contrato.roboledpartner.com.br)
+    let contractEvents: ContractEvent[] = [];
+    try {
+      const allContracts = await fetchContractSystemEvents(setting?.sistemaContratoUrl);
+      contractEvents = allContracts.filter(
+        (ev) => ev.eventDate === isoDate || ev.eventDate === brDate
+      );
+    } catch (err) {
+      console.warn('Contract system sync warning:', err);
+    }
+
     // If Google Calendar has a full-day event
     const gCalFullDay = gCalEvents.find((e) => e.isFullDay);
     if (gCalFullDay) {
@@ -94,7 +106,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const totalEventsCount = blockedEntries.length + confirmedQuotes.length + gCalEvents.length;
+    const totalEventsCount = blockedEntries.length + confirmedQuotes.length + gCalEvents.length + contractEvents.length;
 
     if (totalEventsCount >= maxEvents) {
       return NextResponse.json({
@@ -106,7 +118,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 4. Collect booked times (from blocks, quotes, and Google Calendar)
+    // 4. Collect booked times (from blocks, quotes, Google Calendar, and Contract system)
     const bookedTimes: string[] = [];
     blockedEntries.forEach((b) => {
       if (b.startTime) bookedTimes.push(b.startTime);
@@ -116,6 +128,9 @@ export async function GET(req: NextRequest) {
     });
     gCalEvents.forEach((g) => {
       if (g.startTime) bookedTimes.push(g.startTime);
+    });
+    contractEvents.forEach((c) => {
+      if (c.eventTime) bookedTimes.push(c.eventTime);
     });
 
     // 5. Check time slot conflict if time was requested
