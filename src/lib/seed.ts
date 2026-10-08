@@ -34,18 +34,19 @@ export async function ensureDatabaseSeeded() {
       },
     });
 
-    // 2. Admin User (Upsert)
-    const passwordHash = await bcrypt.hash('admin123', 10);
-    await prisma.adminUser.upsert({
-      where: { email: 'admin@roboledpartner.com.br' },
-      update: {},
-      create: {
-        email: 'admin@roboledpartner.com.br',
-        passwordHash,
-        name: 'Robô LED Partner Admin',
-        role: 'admin',
-      },
-    });
+    // 2. Admin User (Create only if no admin exists)
+    const adminCount = await prisma.adminUser.count();
+    if (adminCount === 0) {
+      const passwordHash = await bcrypt.hash('admin123', 10);
+      await prisma.adminUser.create({
+        data: {
+          email: 'admin@roboledpartner.com.br',
+          passwordHash,
+          name: 'Robô LED Partner Admin',
+          role: 'admin',
+        },
+      });
+    }
 
     // 3. Services (Upsert by slug)
     const defaultServices = [
