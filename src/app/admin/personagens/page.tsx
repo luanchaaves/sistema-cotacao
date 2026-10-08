@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { CharacterItem } from '@/lib/types';
+import { ImageUploadField } from '@/components/admin/ImageUploadField';
 
 export default function AdminCharactersPage() {
   const [characters, setCharacters] = useState<CharacterItem[]>([]);
@@ -269,18 +270,14 @@ export default function AdminCharactersPage() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Caminho da Imagem</label>
-                <input
-                  type="text"
-                  placeholder="/images/homem-aranha.png"
-                  value={editingCharacter.imageUrl || ''}
-                  onChange={(e) =>
-                    setEditingCharacter({ ...editingCharacter, imageUrl: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px]"
-                />
-              </div>
+              {/* Image Upload Field */}
+              <ImageUploadField
+                label="Imagem do Personagem"
+                value={editingCharacter.imageUrl || ''}
+                onChange={(newUrl) =>
+                  setEditingCharacter({ ...editingCharacter, imageUrl: newUrl })
+                }
+              />
 
               <div className="flex items-center justify-between pt-2">
                 <label className="flex items-center gap-2 cursor-pointer">

@@ -19,6 +19,7 @@ import {
   CalendarCheck2,
   Check,
   Search,
+  Link2,
 } from 'lucide-react';
 import { formatCurrencyBRL } from '@/lib/calculator';
 
@@ -32,6 +33,7 @@ export default function AdminAgendaPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [gcalModalOpen, setGcalModalOpen] = useState(false);
+  const [contractModalOpen, setContractModalOpen] = useState(false);
 
   const [gcalUrls, setGcalUrls] = useState({
     googleCalendarUrl1: '',
@@ -42,6 +44,12 @@ export default function AdminAgendaPage() {
   const [testingUrl2, setTestingUrl2] = useState(false);
   const [testResult1, setTestResult1] = useState<{ success?: boolean; message?: string } | null>(null);
   const [testResult2, setTestResult2] = useState<{ success?: boolean; message?: string } | null>(null);
+
+  // Contract System Sync State
+  const [contractUrl, setContractUrl] = useState('http://192.168.12.7:3001');
+  const [testingContract, setTestingContract] = useState(false);
+  const [contractTestResult, setContractTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
+  const [savingContract, setSavingContract] = useState(false);
 
   const [newBlock, setNewBlock] = useState({
     title: 'Data Bloqueada / Evento',
@@ -74,6 +82,9 @@ export default function AdminAgendaPage() {
             googleCalendarUrl1: data.setting.googleCalendarUrl1 || '',
             googleCalendarUrl2: data.setting.googleCalendarUrl2 || '',
           });
+          if (data.setting.sistemaContratoUrl) {
+            setContractUrl(data.setting.sistemaContratoUrl);
+          }
         }
       }
     } catch (err) {
@@ -192,6 +203,49 @@ export default function AdminAgendaPage() {
     }
   };
 
+  const handleTestContractSystem = async () => {
+    setTestingContract(true);
+    setContractTestResult(null);
+
+    try {
+      const res = await fetch('/api/admin/agenda/test-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: contractUrl }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setContractTestResult({ success: true, message: data.message });
+      } else {
+        setContractTestResult({ success: false, message: data.error || 'Erro ao conectar.' });
+      }
+    } catch (err: any) {
+      setContractTestResult({ success: false, message: `Falha de conexão: ${err.message}` });
+    } finally {
+      setTestingContract(false);
+    }
+  };
+
+  const handleSaveContractUrl = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingContract(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sistemaContratoUrl: contractUrl }),
+      });
+      if (res.ok) {
+        setContractModalOpen(false);
+        fetchAgenda(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingContract(false);
+    }
+  };
+
   const formatDateBR = (isoDate: string) => {
     if (!isoDate) return '';
     const parts = isoDate.split('-');
@@ -211,7 +265,7 @@ export default function AdminAgendaPage() {
             Agenda & Disponibilidade de Eventos
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Gerenciamento de agenda, integração com Google Calendar, Sistema de Contratos e bloqueios de datas e horários.
+            Gerenciamento de agenda, sincronização com Google Calendar, Sistema de Contratos e bloqueios de datas.
           </p>
         </div>
 
@@ -223,6 +277,15 @@ export default function AdminAgendaPage() {
           >
             <CalendarCheck2 className="w-4 h-4 text-cyan-400" />
             <span>Google Calendar Sync</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setContractModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-300 font-bold text-xs border border-fuchsia-500/30 flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <Sparkles className="w-4 h-4 text-fuchsia-400" />
+            <span>Sistema Contratos Sync</span>
           </button>
 
           <button
@@ -243,20 +306,17 @@ export default function AdminAgendaPage() {
             <CalendarCheck2 className="w-5 h-5 text-cyan-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-white">Sincronização Google Calendar</span>
-              {gcalUrls.googleCalendarUrl1 || gcalUrls.googleCalendarUrl2 ? (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
-                  Ativo ({googleCalendarEvents.length} eventos detectados)
-                </span>
-              ) : (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold">
-                  Link iCal não configurado
-                </span>
-              )}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-sm text-white">Sincronização Integrada</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-semibold">
+                Google Agenda ({googleCalendarEvents.length})
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30 font-semibold">
+                Contratos ({contractEvents.length})
+              </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Eventos cadastrados no Google Agenda e Sistema de Contratos bloqueiam datas e horários no site de cotação.
+              Eventos confirmados no Google Agenda e Sistema de Contratos bloqueiam automaticamente datas e horários na cotação.
             </p>
           </div>
         </div>
@@ -375,15 +435,24 @@ export default function AdminAgendaPage() {
               ))
             ) : (
               <div className="p-6 text-center text-xs text-slate-400 space-y-2">
-                <p>Nenhum contrato ativo sincronizado no momento.</p>
-                <a
-                  href="https://contrato.roboledpartner.com.br"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[11px] text-fuchsia-400 hover:underline font-semibold inline-block"
-                >
-                  Abrir Sistema Contratos ↗
-                </a>
+                <p>Nenhum contrato ativo sincronizado via API direta.</p>
+                <div className="flex flex-col gap-1 items-center">
+                  <button
+                    type="button"
+                    onClick={() => setContractModalOpen(true)}
+                    className="text-[11px] text-fuchsia-400 hover:underline font-semibold"
+                  >
+                    Configurar Conexão do Sistema de Contratos →
+                  </button>
+                  <a
+                    href="https://contrato.roboledpartner.com.br"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-slate-500 hover:text-slate-300"
+                  >
+                    Abrir Sistema Contratos ↗
+                  </a>
+                </div>
               </div>
             )}
           </div>
@@ -626,7 +695,101 @@ export default function AdminAgendaPage() {
         </div>
       )}
 
-      {/* MODAL 2: MANUAL DATE BLOCK */}
+      {/* MODAL 2: SISTEMA DE CONTRATOS CONFIGURATION */}
+      {contractModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#10121d] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-fuchsia-400" />
+                <span>Integração com Sistema de Contratos</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setContractModalOpen(false)}
+                className="w-7 h-7 rounded-lg bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-300 text-xs space-y-1.5">
+              <div className="font-bold flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5" />
+                Conexão com `contrato.roboledpartner.com.br`:
+              </div>
+              <p className="text-[11px] text-fuchsia-200/90">
+                O sistema de cotação busca automaticamente os eventos e contratos confirmados no seu servidor para evitar agendamentos em datas e horários já preenchidos.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveContractUrl} className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-300">
+                    URL do Servidor de Contratos
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleTestContractSystem}
+                    disabled={testingContract || !contractUrl}
+                    className="text-[10px] text-fuchsia-400 hover:text-fuchsia-300 font-bold flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {testingContract ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                    <span>Testar Conexão</span>
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  placeholder="http://192.168.12.7:3001 ou https://contrato.roboledpartner.com.br"
+                  value={contractUrl}
+                  onChange={(e) => {
+                    setContractUrl(e.target.value.trim());
+                    setContractTestResult(null);
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px] bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-fuchsia-500"
+                />
+                {contractTestResult && (
+                  <div
+                    className={`p-2.5 rounded-lg text-[11px] border flex items-start gap-1.5 ${
+                      contractTestResult.success
+                        ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                        : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                    }`}
+                  >
+                    {contractTestResult.success ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                    )}
+                    <span>{contractTestResult.message}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setContractModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 hover:bg-white/10 text-xs font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingContract}
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-bold text-xs tracking-wide shadow-md flex items-center gap-1.5"
+                >
+                  {savingContract ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Salvar Configuração</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: MANUAL DATE BLOCK */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#10121d] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-5 animate-scaleUp">

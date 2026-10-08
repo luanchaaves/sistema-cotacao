@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ComboItem } from '@/lib/types';
 import { formatCurrencyBRL } from '@/lib/calculator';
+import { ImageUploadField } from '@/components/admin/ImageUploadField';
 
 export default function AdminCombosPage() {
   const [combos, setCombos] = useState<ComboItem[]>([]);
@@ -370,33 +371,25 @@ export default function AdminCombosPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Texto do Selo / Destaque</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Mais Escolhido, 15% OFF"
-                    value={editingCombo.badgeText || ''}
-                    onChange={(e) =>
-                      setEditingCombo({ ...editingCombo, badgeText: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl font-medium"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-300">Caminho da Imagem</label>
-                  <input
-                    type="text"
-                    placeholder="/images/robo-led-2.jpg"
-                    value={editingCombo.imageUrl || ''}
-                    onChange={(e) =>
-                      setEditingCombo({ ...editingCombo, imageUrl: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px]"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="font-semibold text-slate-300">Texto do Selo / Destaque</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Mais Escolhido, 15% OFF"
+                  value={editingCombo.badgeText || ''}
+                  onChange={(e) =>
+                    setEditingCombo({ ...editingCombo, badgeText: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl font-medium"
+                />
               </div>
+
+              {/* Image Upload Field */}
+              <ImageUploadField
+                label="Imagem do Combo Promocional"
+                value={editingCombo.imageUrl || ''}
+                onChange={(newUrl) => setEditingCombo({ ...editingCombo, imageUrl: newUrl })}
+              />
 
               <div className="space-y-1">
                 <label className="font-semibold text-slate-300">Descrição Comercial</label>

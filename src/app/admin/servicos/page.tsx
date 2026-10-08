@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ServiceItem } from '@/lib/types';
 import { formatCurrencyBRL } from '@/lib/calculator';
+import { ImageUploadField } from '@/components/admin/ImageUploadField';
 
 export default function AdminServicesPage() {
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -322,18 +323,12 @@ export default function AdminServicesPage() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-300">Caminho da Imagem</label>
-                <input
-                  type="text"
-                  placeholder="/images/robo-led-1.jpg"
-                  value={editingService.imageUrl || ''}
-                  onChange={(e) =>
-                    setEditingService({ ...editingService, imageUrl: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2.5 rounded-xl font-mono text-[11px]"
-                />
-              </div>
+              {/* Image Upload Field */}
+              <ImageUploadField
+                label="Imagem da Atração / Serviço"
+                value={editingService.imageUrl || ''}
+                onChange={(newUrl) => setEditingService({ ...editingService, imageUrl: newUrl })}
+              />
 
               <div className="flex items-center justify-between pt-2">
                 <label className="flex items-center gap-2 cursor-pointer">
