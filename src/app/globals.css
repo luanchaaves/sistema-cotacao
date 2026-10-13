@@ -98,6 +98,25 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
+@keyframes fadeOutLabel {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(0.5rem) scale(0.95);
+  }
+}
+
+.animate-fadeOut {
+  animation: fadeOutLabel 2.5s forwards ease-in-out;
+}
+
 .animate-subtle-glow {
   animation: subtle-glow 3s infinite ease-in-out;
 }
