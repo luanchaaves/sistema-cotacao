@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureDatabaseSeeded } from '@/lib/seed';
-import { geocodeAddress, calculateDrivingDistance } from '@/lib/distance';
+import { fetchAddressByCep, geocodeAddress, calculateDrivingDistance } from '@/lib/distance';
 import { calculateShippingBreakdown } from '@/lib/calculator';
 
 export async function POST(req: NextRequest) {
@@ -30,23 +30,34 @@ export async function POST(req: NextRequest) {
     let targetLng = typeof destLng === 'number' ? destLng : null;
     let resolvedAddress = '';
 
-    // If coordinates are not given, attempt to geocode
+    // If coordinates are not given, attempt fast CEP lookup or geocode
     if (targetLat === null || targetLng === null) {
-      const queryParts = [street, number, neighborhood, city, state, 'Brasil'].filter(Boolean);
-      const query = queryParts.join(', ');
+      if (cep && typeof cep === 'string' && cep.replace(/\D/g, '').length === 8) {
+        const cepData = await fetchAddressByCep(cep);
+        if (cepData && cepData.lat && cepData.lng) {
+          targetLat = cepData.lat;
+          targetLng = cepData.lng;
+          resolvedAddress = `${cepData.logradouro || street || ''}, ${neighborhood || cepData.bairro || ''}, ${city || cepData.localidade} - ${state || cepData.uf}`;
+        }
+      }
 
-      const geoResult = await geocodeAddress(query);
-      if (geoResult) {
-        targetLat = geoResult.lat;
-        targetLng = geoResult.lng;
-        resolvedAddress = geoResult.displayName;
-      } else if (city && state) {
-        // Fallback geocode city
-        const cityGeo = await geocodeAddress(`${city}, ${state}, Brasil`);
-        if (cityGeo) {
-          targetLat = cityGeo.lat;
-          targetLng = cityGeo.lng;
-          resolvedAddress = `${city} - ${state}`;
+      if (targetLat === null || targetLng === null) {
+        const queryParts = [street, number, neighborhood, city, state, 'Brasil'].filter(Boolean);
+        const query = queryParts.join(', ');
+
+        const geoResult = await geocodeAddress(query);
+        if (geoResult) {
+          targetLat = geoResult.lat;
+          targetLng = geoResult.lng;
+          resolvedAddress = geoResult.displayName;
+        } else if (city && state) {
+          // Fallback geocode city
+          const cityGeo = await geocodeAddress(`${city}, ${state}, Brasil`);
+          if (cityGeo) {
+            targetLat = cityGeo.lat;
+            targetLng = cityGeo.lng;
+            resolvedAddress = `${city} - ${state}`;
+          }
         }
       }
     }

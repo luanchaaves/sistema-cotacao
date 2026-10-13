@@ -1,10 +1,11 @@
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
+let isSeeded = false;
 let isSeeding = false;
 
 export async function ensureDatabaseSeeded() {
-  if (isSeeding) return;
+  if (isSeeded || isSeeding) return;
   isSeeding = true;
 
   try {
@@ -194,5 +195,6 @@ export async function ensureDatabaseSeeded() {
     console.error('Safe database seeding error (non-fatal):', err);
   } finally {
     isSeeding = false;
+    isSeeded = true;
   }
 }

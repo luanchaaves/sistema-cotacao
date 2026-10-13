@@ -246,32 +246,33 @@ export async function fetchGoogleCalendarEvents(
     return [];
   }
 
-  const allEvents: GoogleCalendarEvent[] = [];
-
-  for (const { url, label } of validUrls) {
+  const fetchPromises = validUrls.map(async ({ url, label }) => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-
       const res = await fetch(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/calendar, text/plain, */*',
         },
-        signal: controller.signal,
+        signal: AbortSignal.timeout(2000),
         cache: 'no-store',
       });
-      clearTimeout(timeoutId);
 
       if (res.ok) {
         const icsText = await res.text();
-        const parsed = parseICalFeed(icsText, label);
-        allEvents.push(...parsed);
-      } else {
-        console.warn(`[GCalendar Sync] Failed to fetch feed (${label}): HTTP ${res.status}`);
+        return parseICalFeed(icsText, label);
       }
-    } catch (err: any) {
-      console.error(`[GCalendar Sync] Error fetching feed (${label}):`, err.message || err);
+      return [];
+    } catch {
+      return [];
+    }
+  });
+
+  const results = await Promise.allSettled(fetchPromises);
+  const allEvents: GoogleCalendarEvent[] = [];
+
+  for (const r of results) {
+    if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+      allEvents.push(...r.value);
     }
   }
 
