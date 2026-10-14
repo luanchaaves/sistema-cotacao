@@ -138,13 +138,13 @@ export default function QuoteViewClient({ code }: QuoteViewClientProps) {
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
             <div className="flex items-center gap-3.5">
-              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-950/80 to-black p-1 border border-fuchsia-500/40 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(246,53,244,0.3)]">
+              <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
                 <Image
-                  src="/images/logo-official.png"
+                  src="/images/logo-white.png"
                   alt="Robô LED Partner"
-                  width={52}
-                  height={52}
-                  className="object-contain w-full h-full"
+                  width={48}
+                  height={48}
+                  className="object-contain w-full h-full filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]"
                 />
               </div>
               <div>

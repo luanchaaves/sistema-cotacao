@@ -50,13 +50,13 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Brand */}
         <div className="text-center space-y-3">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-950/80 to-black p-2 border border-fuchsia-500/40 flex items-center justify-center mx-auto shadow-[0_0_25px_rgba(246,53,244,0.35)]">
+          <div className="w-20 h-20 flex items-center justify-center mx-auto">
             <Image
-              src="/images/logo-official.png"
+              src="/images/logo-white.png"
               alt="Robô LED Partner"
-              width={72}
-              height={72}
-              className="object-contain"
+              width={80}
+              height={80}
+              className="object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
             />
           </div>
           <h1 className="text-2xl font-black text-white tracking-wider flex items-center justify-center gap-1.5">

@@ -19,14 +19,14 @@ export function Header({ setting }: HeaderProps) {
     <header className="sticky top-0 z-50 w-full glass-panel border-b border-white/10 bg-[#090a10]/80 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
         {/* Brand Logo & Name */}
-        <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group">
-          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950/60 to-black p-1 border border-fuchsia-500/40 flex items-center justify-center shadow-[0_0_15px_rgba(246,53,244,0.25)] group-hover:border-fuchsia-400 group-hover:shadow-[0_0_20px_rgba(246,53,244,0.45)] transition-all shrink-0">
+        <Link href="/" className="flex items-center gap-3 sm:gap-4 group">
+          <div className="relative w-11 h-11 sm:w-13 sm:h-13 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 duration-300">
             <Image
-              src="/images/logo-official.png"
+              src="/images/logo-white.png"
               alt="Robô LED Partner"
-              width={56}
-              height={56}
-              className="object-contain w-full h-full"
+              width={52}
+              height={52}
+              className="object-contain w-full h-full filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]"
               priority
             />
           </div>
