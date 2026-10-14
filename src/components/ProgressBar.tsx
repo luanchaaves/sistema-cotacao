@@ -19,26 +19,28 @@ export function ProgressBar({ currentStep, onStepClick }: ProgressBarProps) {
   ];
 
   return (
-    <div className="w-full max-w-3xl mx-auto mb-8 px-2 sm:px-4">
-      {/* Mobile progress indicator */}
-      <div className="flex sm:hidden items-center justify-between mb-3 bg-white/5 px-4 py-2.5 rounded-xl border border-white/5">
-        <span className="text-xs text-slate-400 font-medium">
-          Etapa <strong className="text-fuchsia-400 font-semibold">{currentStep}</strong> de 5
+    <div className="w-full max-w-3xl mx-auto mb-6 sm:mb-8 px-1 sm:px-4">
+      {/* Mobile top step badge */}
+      <div className="flex sm:hidden items-center justify-between mb-3 bg-white/[0.03] px-3.5 py-2 rounded-xl border border-white/5">
+        <span className="text-[11px] text-slate-400 font-medium">
+          Etapa <strong className="text-fuchsia-400 font-bold">{currentStep}</strong> de 5
         </span>
-        <span className="text-xs font-semibold text-white">
+        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-500 animate-pulse" />
           {steps[currentStep - 1]?.label || 'Proposta'}
         </span>
       </div>
 
-      {/* Desktop & Tablet step tracker */}
+      {/* Step Tracker with responsive sizes */}
       <div className="relative flex items-center justify-between">
         {/* Background track line */}
-        <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-white/10 rounded-full z-0" />
+        <div className="absolute left-4 sm:left-6 right-4 sm:right-6 top-4 sm:top-5.5 -translate-y-1/2 h-0.5 sm:h-1 bg-white/10 rounded-full z-0" />
+        
         {/* Active progress bar fill */}
         <div
-          className="absolute left-6 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-fuchsia-600 via-pink-500 to-cyan-400 rounded-full transition-all duration-500 z-0"
+          className="absolute left-4 sm:left-6 top-4 sm:top-5.5 -translate-y-1/2 h-0.5 sm:h-1 bg-gradient-to-r from-fuchsia-600 via-pink-500 to-cyan-400 rounded-full transition-all duration-500 z-0"
           style={{
-            width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+            width: `calc(${((currentStep - 1) / (steps.length - 1)) * 100}% - ${currentStep === 1 ? '0px' : '0px'})`,
           }}
         />
 
@@ -59,23 +61,23 @@ export function ProgressBar({ currentStep, onStepClick }: ProgressBarProps) {
               }`}
             >
               <div
-                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-300 font-semibold text-xs sm:text-sm border-2 ${
+                className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-300 font-semibold text-xs sm:text-sm border-2 ${
                   isActive
-                    ? 'bg-fuchsia-600 text-white border-fuchsia-400 shadow-[0_0_20px_rgba(246,53,244,0.6)] scale-110'
+                    ? 'bg-fuchsia-600 text-white border-fuchsia-400 shadow-[0_0_15px_rgba(246,53,244,0.6)] scale-105 sm:scale-110'
                     : isCompleted
                     ? 'bg-slate-900 text-fuchsia-400 border-fuchsia-500 hover:border-fuchsia-300'
-                    : 'bg-[#10121b] text-slate-400 border-white/10'
+                    : 'bg-[#10121b] text-slate-500 border-white/10'
                 }`}
               >
-                <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Icon className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
               </div>
               <span
-                className={`mt-2 text-[11px] sm:text-xs font-medium tracking-wide transition-colors ${
+                className={`mt-1.5 sm:mt-2 text-[10px] sm:text-xs font-medium tracking-wide transition-colors ${
                   isActive
-                    ? 'text-fuchsia-400 font-semibold'
+                    ? 'text-fuchsia-400 font-bold'
                     : isCompleted
                     ? 'text-slate-300 group-hover:text-white'
-                    : 'text-slate-400'
+                    : 'text-slate-500'
                 }`}
               >
                 {step.label}

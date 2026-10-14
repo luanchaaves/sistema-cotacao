@@ -18,25 +18,34 @@
   --text-muted: #64748b;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* Glassmorphism helpers */
 .glass-panel {
-  background: rgba(16, 18, 27, 0.75);
+  background: rgba(16, 18, 27, 0.82);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
-  background: rgba(22, 25, 38, 0.65);
+  background: rgba(22, 25, 38, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -44,21 +53,21 @@ body {
 }
 
 .glass-card:hover {
-  border-color: rgba(246, 53, 244, 0.3);
+  border-color: rgba(246, 53, 244, 0.35);
   transform: translateY(-2px);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(246, 53, 244, 0.15);
 }
 
 .glass-card-selected {
-  background: rgba(246, 53, 244, 0.08);
+  background: rgba(246, 53, 244, 0.09);
   border-color: rgba(246, 53, 244, 0.65);
   box-shadow: 0 0 25px -5px rgba(246, 53, 244, 0.25);
 }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -74,18 +83,31 @@ body {
   background: #2d334d;
 }
 
-/* Form controls */
+/* Form controls optimized for touch and iOS zoom prevention */
 input, select, textarea {
   background-color: rgba(16, 18, 27, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #f8fafc;
   transition: all 0.2s ease;
+  font-size: 16px; /* Prevents auto-zoom on iOS */
+}
+
+@media (min-width: 640px) {
+  input, select, textarea {
+    font-size: 0.875rem; /* 14px on tablets & desktop */
+  }
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: #f635f4;
   box-shadow: 0 0 0 3px rgba(246, 53, 244, 0.18);
+}
+
+/* Touch optimization for mobile lists & modals */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* Pulse / glow micro-animation */
@@ -98,48 +120,6 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-@keyframes fadeOutLabel {
-  0% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-  70% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(0.5rem) scale(0.95);
-  }
-}
-
-.animate-fadeOut {
-  animation: fadeOutLabel 2.5s forwards ease-in-out;
-}
-
 .animate-subtle-glow {
   animation: subtle-glow 3s infinite ease-in-out;
-}
-
-/* Print proposal styling */
-@media print {
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-  }
-  
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-only {
-    display: block !important;
-  }
-  
-  .glass-panel, .glass-card {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    color: #000000 !important;
-    box-shadow: none !important;
-  }
 }

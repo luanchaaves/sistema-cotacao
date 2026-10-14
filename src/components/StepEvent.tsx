@@ -139,18 +139,18 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
           <Sparkles className="w-3.5 h-3.5" />
           Etapa 1 de 5
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+        <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
           Conte sobre o seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-500">Evento</span>
         </h2>
-        <p className="text-sm text-slate-400">
+        <p className="text-xs sm:text-sm text-slate-400">
           Preencha seus dados para montarmos uma cotação sob medida e reservarmos a disponibilidade.
         </p>
       </div>
 
       {/* Main Form Fields */}
-      <div className="glass-panel rounded-2xl p-6 sm:p-8 space-y-6">
+      <div className="glass-panel rounded-2xl p-4 sm:p-8 space-y-4 sm:space-y-6">
         {/* Contact Info Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5">
           {/* Name */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-300 flex items-center gap-2">
@@ -193,12 +193,12 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
         </div>
 
         {/* Event Type Grid Selection */}
-        <div className="space-y-3 pt-2">
+        <div className="space-y-2.5 pt-1">
           <label className="text-xs font-semibold text-slate-300 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-fuchsia-400" />
             Tipo de Evento *
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {eventTypes.map((item) => {
               const Icon = item.icon;
               const isSelected = formData.eventType === item.label;
@@ -207,27 +207,29 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
                   key={item.label}
                   type="button"
                   onClick={() => updateFormData({ eventType: item.label })}
-                  className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition-all ${
+                  className={`flex items-center sm:flex-col sm:items-start gap-2 sm:gap-2 px-2.5 py-2 sm:p-3.5 rounded-xl border text-left transition-all active:scale-[0.98] ${
                     isSelected
-                      ? 'bg-fuchsia-500/15 border-fuchsia-500 ring-1 ring-fuchsia-500/50 shadow-[0_0_15px_rgba(246,53,244,0.2)]'
+                      ? 'bg-fuchsia-500/20 border-fuchsia-500 ring-1 ring-fuchsia-500/50 shadow-[0_0_15px_rgba(246,53,244,0.25)]'
                       : 'bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]'
                   }`}
                 >
                   <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center mb-2 ${
+                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-fuchsia-500 text-white'
+                        ? 'bg-fuchsia-500 text-white shadow-sm'
                         : 'bg-white/5 text-slate-400'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
-                  <span className="font-semibold text-xs sm:text-sm text-white">
-                    {item.label}
-                  </span>
-                  <span className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
-                    {item.description}
-                  </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-xs sm:text-sm text-white truncate">
+                      {item.label}
+                    </span>
+                    <span className="hidden sm:block text-[10px] text-slate-400 truncate mt-0.5">
+                      {item.description}
+                    </span>
+                  </div>
                 </button>
               );
             })}
