@@ -20,13 +20,13 @@ export function Header({ setting }: HeaderProps) {
       <div className="max-w-6xl mx-auto px-3.5 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
         {/* Brand Logo & Name */}
         <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group shrink-0">
-          <div className="relative w-8 h-8 sm:w-11 sm:h-11 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 duration-300">
+          <div className="relative w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 duration-300">
             <Image
-              src="/images/logo-white.png"
+              src="/images/logo-icon.png"
               alt="Robô LED Partner"
-              width={44}
-              height={44}
-              className="object-contain w-full h-full filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]"
+              width={48}
+              height={48}
+              className="object-contain w-full h-full filter drop-shadow-[0_0_12px_rgba(246,53,244,0.45)]"
               priority
             />
           </div>

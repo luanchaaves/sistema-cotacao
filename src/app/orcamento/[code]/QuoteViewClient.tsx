@@ -140,11 +140,11 @@ export default function QuoteViewClient({ code }: QuoteViewClientProps) {
             <div className="flex items-center gap-3.5">
               <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
                 <Image
-                  src="/images/logo-white.png"
+                  src="/images/logo-icon.png"
                   alt="Robô LED Partner"
                   width={48}
                   height={48}
-                  className="object-contain w-full h-full filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]"
+                  className="object-contain w-full h-full filter drop-shadow-[0_0_12px_rgba(246,53,244,0.45)]"
                 />
               </div>
               <div>

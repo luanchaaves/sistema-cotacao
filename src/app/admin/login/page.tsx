@@ -52,11 +52,11 @@ export default function AdminLoginPage() {
         <div className="text-center space-y-3">
           <div className="w-20 h-20 flex items-center justify-center mx-auto">
             <Image
-              src="/images/logo-white.png"
+              src="/images/logo-icon.png"
               alt="Robô LED Partner"
               width={80}
               height={80}
-              className="object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+              className="object-contain filter drop-shadow-[0_0_20px_rgba(246,53,244,0.5)]"
             />
           </div>
           <h1 className="text-2xl font-black text-white tracking-wider flex items-center justify-center gap-1.5">

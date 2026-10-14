@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <header className="md:hidden glass-panel border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-50 bg-[#090a10]/95 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
           <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
-            <Image src="/images/logo-white.png" alt="Logo" width={32} height={32} className="object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.2)]" />
+            <Image src="/images/logo-icon.png" alt="Logo" width={32} height={32} className="object-contain filter drop-shadow-[0_0_8px_rgba(246,53,244,0.4)]" />
           </div>
           <span className="font-extrabold text-sm text-white">ROBÔ LED <span className="text-fuchsia-400">ADMIN</span></span>
         </div>
@@ -112,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Logo brand */}
           <div className="flex items-center gap-3 px-2">
             <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
-              <Image src="/images/logo-white.png" alt="Robô LED Partner" width={40} height={40} className="object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" />
+              <Image src="/images/logo-icon.png" alt="Robô LED Partner" width={40} height={40} className="object-contain filter drop-shadow-[0_0_10px_rgba(246,53,244,0.45)]" />
             </div>
             <div>
               <span className="font-black text-sm text-white tracking-wider block">
