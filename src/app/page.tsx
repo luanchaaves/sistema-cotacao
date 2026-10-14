@@ -234,9 +234,6 @@ export default function HomePage() {
           <StepEvent
             formData={formData}
             updateFormData={updateFormData}
-            services={services}
-            combos={combos}
-            characters={characters}
             onNext={() => {
               setCurrentStep(2);
               window.scrollTo({ top: 0, behavior: 'smooth' });

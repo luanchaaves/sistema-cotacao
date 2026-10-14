@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import {
   User,
   Phone,
@@ -19,32 +18,16 @@ import {
   AlertCircle,
   Loader2,
   AlertTriangle,
-  Zap,
-  Flame,
-  Wine,
-  Layers,
-  Bot,
-  ArrowRight,
 } from 'lucide-react';
-import { QuoteFormData, ServiceItem, ComboItem, CharacterItem } from '@/lib/types';
+import { QuoteFormData } from '@/lib/types';
 
 interface StepEventProps {
   formData: QuoteFormData;
   updateFormData: (fields: Partial<QuoteFormData>) => void;
-  services?: ServiceItem[];
-  combos?: ComboItem[];
-  characters?: CharacterItem[];
   onNext: () => void;
 }
 
-export function StepEvent({
-  formData,
-  updateFormData,
-  services = [],
-  combos = [],
-  characters = [],
-  onNext,
-}: StepEventProps) {
+export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [availability, setAvailability] = useState<{
@@ -65,60 +48,6 @@ export function StepEvent({
     { label: 'Formatura', icon: GraduationCap, description: 'Baile & Pista de Dança' },
     { label: 'Festa de empresa', icon: Briefcase, description: 'Fim de ano e celebrações' },
     { label: 'Outro', icon: Sparkles, description: 'Personalizado' },
-  ];
-
-  // Vitrine de atrações em destaque para o cliente visualizar logo no início
-  const attractionsShowcase = [
-    {
-      id: 'robo-led',
-      title: 'Robôs de LED Gigantes',
-      badge: 'Atração Principal',
-      badgeColor: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40',
-      image: '/images/Robo1.jpg',
-      icon: Bot,
-      tags: ['Canhão CO2', 'Fogo Sparkular', 'Laser Show'],
-      description: 'Gigante futurista de 2.80m com armadura de LED multicolorida, jatos de fumaça gelada e efeitos na pista.',
-    },
-    {
-      id: 'tequileiro',
-      title: 'Robô Tequileiro',
-      badge: 'Mais Pedido na Balada',
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-      image: '/images/tequileiro.png',
-      icon: Wine,
-      tags: ['Rodadas de Shots', 'Animação Total', 'Pista Fervendo'],
-      description: 'A sensação para casamentos e 15 anos. O robô interage com convidados servindo shots eletrizantes na pista.',
-    },
-    {
-      id: 'personagens',
-      title: 'Personagens Vivos & Heróis',
-      badge: 'Infantil & Família',
-      badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-      image: '/images/h-aranha.png',
-      icon: Zap,
-      tags: ['Homem-Aranha', 'Sonic', 'Mickey Gala', 'Marshmello'],
-      description: 'Personagens temáticos com fantasias de alta qualidade para fotos memoráveis, recepção e momentos especiais.',
-    },
-    {
-      id: 'efeitos',
-      title: 'Efeitos Especiais de Palco',
-      badge: 'Cenografia Premium',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      image: '/images/2.png',
-      icon: Flame,
-      tags: ['CO2 Criogênico', 'Fogo Frio Sparkular', 'Bastões LED'],
-      description: 'Centelhas pirotécnicas frias 100% seguras para salões fechados sem queimar e canhões de CO2 de alta pressão.',
-    },
-    {
-      id: 'combos',
-      title: 'Combos Promocionais',
-      badge: 'Melhor Custo-Benefício',
-      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-      image: '/images/BK.png',
-      icon: Layers,
-      tags: ['Robô + Efeitos', 'Robô + Tequileiro', 'Descontos Especiais'],
-      description: 'Pacotes completos combinando múltiplas atrações com desconto exclusivo aplicado automaticamente.',
-    },
   ];
 
   // Format Brazilian phone mask (11) 99999-9999
@@ -204,9 +133,8 @@ export function StepEvent({
 
   return (
     <form onSubmit={handleContinue} className="space-y-8 animate-fadeIn">
-      
       {/* Intro Header */}
-      <div className="text-center max-w-2xl mx-auto space-y-2">
+      <div className="text-center max-w-xl mx-auto space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-300 text-xs font-semibold uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5" />
           Etapa 1 de 5
@@ -215,85 +143,8 @@ export function StepEvent({
           Conte sobre o seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-500">Evento</span>
         </h2>
         <p className="text-sm text-slate-400">
-          Preencha os dados do seu evento para verificarmos a agenda e calcularmos o frete sob medida.
+          Preencha seus dados para montarmos uma cotação sob medida e reservarmos a disponibilidade.
         </p>
-      </div>
-
-      {/* ===================================================================
-          VITRINE DE ATRAÇÕES DISPONÍVEIS (NOVA SEÇÃO DE DESTAQUE)
-          =================================================================== */}
-      <div className="glass-panel rounded-2xl p-5 sm:p-7 space-y-4 border border-fuchsia-500/20 bg-gradient-to-b from-fuchsia-500/[0.04] to-transparent">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-white/5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/40 flex items-center justify-center text-fuchsia-300">
-              <Zap className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                Atrações Disponíveis para o seu Evento
-              </h3>
-              <p className="text-xs text-slate-400">
-                Você poderá escolher e personalizar todas elas na <strong>Etapa 3</strong>:
-              </p>
-            </div>
-          </div>
-          <span className="text-[11px] font-medium text-fuchsia-300 bg-fuchsia-500/10 px-2.5 py-1 rounded-full self-start sm:self-center border border-fuchsia-500/20">
-            Catálogo 100% Atualizado
-          </span>
-        </div>
-
-        {/* Grid de Atrações em Destaque */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
-          {attractionsShowcase.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.id}
-                className="group relative rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 hover:border-fuchsia-500/40 p-3.5 transition-all duration-300 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-fuchsia-400 group-hover:bg-fuchsia-500/20 transition-colors">
-                        <Icon className="w-3.5 h-3.5" />
-                      </div>
-                      <h4 className="font-bold text-xs sm:text-sm text-white group-hover:text-fuchsia-300 transition-colors">
-                        {item.title}
-                      </h4>
-                    </div>
-                    <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${item.badgeColor}`}
-                    >
-                      {item.badge}
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] text-slate-300/90 leading-relaxed mb-3">
-                    {item.description}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/5">
-                  {item.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-slate-400 font-medium"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-white/[0.02] p-2.5 rounded-lg border border-white/5">
-          <Sparkles className="w-3.5 h-3.5 text-fuchsia-400 shrink-0" />
-          <span>
-            Ao preencher o formulário abaixo, você seguirá para a <strong>Localização</strong> e em seguida poderá <strong>selecionar suas atrações e combos</strong> com cálculo de valor em tempo real.
-          </span>
-        </div>
       </div>
 
       {/* Main Form Fields */}
@@ -398,13 +249,14 @@ export function StepEvent({
               {checkingAvailability && (
                 <span className="text-[10px] text-slate-400 flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin text-fuchsia-400" />
-                  Verificando agenda...
+                  Checando agenda...
                 </span>
               )}
             </div>
             <input
               type="date"
               value={formData.eventDate}
+              min={new Date().toISOString().split('T')[0]}
               onChange={(e) => updateFormData({ eventDate: e.target.value })}
               className={`w-full px-4 py-3 rounded-xl text-sm font-medium ${
                 errors.eventDate ? 'border-red-500 ring-1 ring-red-500' : ''
@@ -412,40 +264,6 @@ export function StepEvent({
             />
             {errors.eventDate && (
               <p className="text-xs text-red-400 mt-1">{errors.eventDate}</p>
-            )}
-
-            {/* Live Availability Status */}
-            {availability.checked && formData.eventDate && !checkingAvailability && (
-              <div
-                className={`p-3 rounded-xl text-xs flex items-start gap-2.5 ${
-                  availability.available
-                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
-                    : 'bg-amber-500/10 border border-amber-500/20 text-amber-300'
-                }`}
-              >
-                {availability.available ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold block">Data com Vagas Disponíveis!</span>
-                      <span className="text-[11px] text-emerald-400/80">
-                        Podemos atender seu evento nesta data. Preencha o restante para simular.
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold block">Atenção sobre esta data:</span>
-                      <span className="text-[11px] text-amber-300/80">
-                        {availability.reason ||
-                          'Já temos eventos confirmados. Consulte horários específicos ou fale com nosso suporte.'}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
             )}
           </div>
 
@@ -461,45 +279,69 @@ export function StepEvent({
               onChange={(e) => updateFormData({ eventTime: e.target.value })}
               className="w-full px-4 py-3 rounded-xl text-sm font-medium"
             />
-            <p className="text-[11px] text-slate-400">
-              Horário de início da atração na festa.
-            </p>
           </div>
 
-          {/* Guests Count */}
+          {/* Guests */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-300 flex items-center gap-2">
               <Users className="w-4 h-4 text-purple-400" />
               Qtd. Estimada de Convidados
             </label>
             <select
-              value={formData.guestCount}
+              value={formData.guestCount || ''}
               onChange={(e) => updateFormData({ guestCount: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl text-sm font-medium bg-[#111220]"
+              className="w-full px-4 py-3 rounded-xl text-sm font-medium"
             >
               <option value="">Selecione (opcional)</option>
               <option value="Até 50 pessoas">Até 50 convidados</option>
               <option value="50 a 100 pessoas">50 a 100 convidados</option>
               <option value="100 a 200 pessoas">100 a 200 convidados</option>
-              <option value="200 a 400 pessoas">200 a 400 convidados</option>
-              <option value="Mais de 400 pessoas">Mais de 400 convidados</option>
+              <option value="200 a 300 pessoas">200 a 300 convidados</option>
+              <option value="Mais de 300 pessoas">Mais de 300 convidados</option>
             </select>
-            <p className="text-[11px] text-slate-400">
-              Ajuda a dimensionar o show ideal.
-            </p>
           </div>
         </div>
 
-        {/* Submit / Next Button */}
-        <div className="pt-4 flex justify-end">
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:from-fuchsia-600 hover:to-pink-600 text-white shadow-lg shadow-fuchsia-500/25 transition-all flex items-center justify-center gap-2"
-          >
-            <span>Avançar para Localização</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Live Availability Feedback Banner */}
+        {formData.eventDate && availability.checked && (
+          <div className="pt-1">
+            {availability.available ? (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  <strong>Data disponível!</strong> Nossa equipe possui disponibilidade para apresentações no dia selecionado.
+                </span>
+              </div>
+            ) : availability.isFullDayUnavailable ? (
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block text-red-200">Data Indisponível na Agenda</strong>
+                  <span className="text-[11px] opacity-90">{availability.reason}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block text-amber-200">Atenção ao Horário</strong>
+                  <span className="text-[11px] opacity-90">{availability.reason}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Action Button */}
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-fuchsia-600/30 hover:shadow-fuchsia-600/50 transition-all flex items-center justify-center gap-2"
+        >
+          <span>Avançar para Localização</span>
+          <span className="text-lg">→</span>
+        </button>
       </div>
     </form>
   );
