@@ -5,8 +5,21 @@ import { parseICalFeed } from '@/lib/gcalendar';
 export async function POST(req: NextRequest) {
   try {
     const session = await getAdminSession();
-    if (!session) {
+    if (!session || session.role !== 'admin') {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    if (
+      process.env.DISABLE_EXTERNAL_GCAL === 'true' ||
+      process.env.DISABLE_EXTERNAL_GCAL === '1' ||
+      process.env.DISABLE_EXTERNAL_GCAL === 'yes'
+    ) {
+      return NextResponse.json({
+        success: true,
+        message: 'Google Calendar externo desativado por política de homologação (DISABLE_EXTERNAL_GCAL=true). Nenhuma requisição externa executada.',
+        eventsCount: 0,
+        sampleEvents: [],
+      });
     }
 
     const { url } = await req.json();

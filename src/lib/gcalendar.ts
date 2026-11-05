@@ -226,6 +226,15 @@ export async function fetchGoogleCalendarEvents(
   urls: { url: string; label: string }[],
   forceRefresh = false
 ): Promise<GoogleCalendarEvent[]> {
+  // Proteção de homologação: bloqueia chamadas externas se DISABLE_EXTERNAL_GCAL=true
+  if (
+    process.env.DISABLE_EXTERNAL_GCAL === 'true' ||
+    process.env.DISABLE_EXTERNAL_GCAL === '1' ||
+    process.env.DISABLE_EXTERNAL_GCAL === 'yes'
+  ) {
+    return [];
+  }
+
   const now = Date.now();
   if (!forceRefresh && cachedEvents.length > 0 && now - lastFetchTime < CACHE_TTL_MS) {
     return cachedEvents;
