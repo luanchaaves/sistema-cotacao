@@ -4,6 +4,7 @@ import { ensureDatabaseSeeded } from '@/lib/seed';
 import { calculateQuote } from '@/lib/calculator';
 import { generateWhatsAppMessage, generateWhatsAppUrl } from '@/lib/whatsapp';
 import { ComboItem, ServiceItem } from '@/lib/types';
+import { syncOfflineQuotesToCentral } from '@/lib/sync-engine';
 
 function generateQuoteCode(): string {
   const currentYear = new Date().getFullYear();
@@ -14,25 +15,6 @@ function generateQuoteCode(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
-    // 1. Integração com a Plataforma Central Unificada
-    const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
-    if (centralApiUrl) {
-      try {
-        const res = await fetch(`${centralApiUrl.replace(/\/+$/, '')}/public/quotes`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        if (res.ok) {
-          const centralQuoteRes = await res.json();
-          return NextResponse.json(centralQuoteRes, { status: 201 });
-        }
-      } catch (centralErr) {
-        console.warn('Falha no repasse para API Central, processando via banco local:', centralErr);
-      }
-    }
-
     await ensureDatabaseSeeded();
 
     const {
@@ -62,7 +44,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Load active settings and catalog from DB to guarantee backend-enforced prices
+    // 1. Carregar configurações e catálogo para cálculo autorizado
     const [setting, allServicesDb, allCombosDb, allCharactersDb] = await Promise.all([
       prisma.setting.findUnique({ where: { id: 'default' } }),
       prisma.service.findMany({ where: { isActive: true } }),
@@ -108,13 +90,12 @@ export async function POST(req: NextRequest) {
       badgeText: c.badgeText,
     }));
 
-    // Resolve character names from selectedCharacterIds
     const selectedCharObjects = allCharactersDb.filter(
       (ch) => selectedCharacterIds.includes(ch.id) || selectedCharacterIds.includes(ch.slug) || selectedCharacterIds.includes(ch.name)
     );
     const selectedCharacterNames = selectedCharObjects.map((ch) => ch.name);
 
-    // Calculate Authoritative Quote on Backend
+    // 2. Calcular orçamento autorizado
     const quoteCalc = calculateQuote({
       setting: {
         id: setting.id,
@@ -147,8 +128,8 @@ export async function POST(req: NextRequest) {
       generalDurationHours: Number(durationHours) || 1.0,
     });
 
-    // Generate unique reference code
-    let code = generateQuoteCode();
+    // 3. Gerar código único e amigável
+    let code = body.code || generateQuoteCode();
     let collisionCheck = await prisma.quote.findUnique({ where: { code } });
     while (collisionCheck) {
       code = generateQuoteCode();
@@ -158,42 +139,74 @@ export async function POST(req: NextRequest) {
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || 'Browser';
 
-    // Persist to SQLite
+    // 4. Tentar sincronizar diretamente com a API Central
+    const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
+    let syncStatusTag = '[PENDING_CENTRAL_SYNC]';
+
+    const quotePayload = {
+      code,
+      clientName: clientName.trim(),
+      clientWhatsapp: clientWhatsapp.trim(),
+      clientEmail: body.clientEmail ? body.clientEmail.trim() : null,
+      eventType: eventType.trim(),
+      eventDate: eventDate.trim(),
+      eventTime: (eventTime || '').trim(),
+      guestCount: guestCount ? parseInt(String(guestCount), 10) : null,
+      addressFull: addressFull.trim(),
+      addressCep: addressCep ? addressCep.trim() : null,
+      addressCity: addressCity ? addressCity.trim() : null,
+      addressState: addressState ? addressState.trim() : null,
+      distanceOneWayKm: quoteCalc.shipping.distanceOneWayKm,
+      distanceTotalKm: quoteCalc.shipping.distanceTotalKm,
+      durationHours: Number(durationHours) || 1.0,
+      selectedComboId: quoteCalc.selectedCombo ? quoteCalc.selectedCombo.comboId : null,
+      selectedComboData: quoteCalc.selectedCombo ? JSON.stringify(quoteCalc.selectedCombo) : null,
+      selectedServicesData: JSON.stringify(quoteCalc.selectedServices),
+      selectedCharacters: JSON.stringify(selectedCharacterNames),
+      fuelCost: quoteCalc.shipping.fuelCost,
+      marginCost: quoteCalc.shipping.marginCost,
+      tollsCost: quoteCalc.shipping.tollsCost,
+      calculatedShipping: quoteCalc.shipping.calculatedShipping,
+      finalShipping: quoteCalc.shipping.finalShipping,
+      servicesSubtotal: quoteCalc.servicesSubtotal,
+      totalAmount: quoteCalc.totalAmount,
+      notes: notes ? String(notes).trim() : null,
+      status: 'pending',
+      ipAddress,
+      userAgent,
+    };
+
+    if (centralApiUrl) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout para não travar o cliente
+
+        const centralRes = await fetch(`${centralApiUrl.replace(/\/+$/, '')}/public/quotes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(quotePayload),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (centralRes.ok) {
+          syncStatusTag = `[SYNCED_TO_CENTRAL] em ${new Date().toISOString()}`;
+        }
+      } catch (centralErr) {
+        console.warn('⚠️ API Central indisponível no momento. Gravando cotação local com fila de sincronização:', centralErr);
+        syncStatusTag = '[PENDING_CENTRAL_SYNC]';
+      }
+    }
+
+    // 5. Persistir localmente (Garantia de Zero Perda de Dados)
     const savedQuote = await prisma.quote.create({
       data: {
-        code,
-        clientName: clientName.trim(),
-        clientWhatsapp: clientWhatsapp.trim(),
-        eventType: eventType.trim(),
-        eventDate: eventDate.trim(),
-        eventTime: (eventTime || '').trim(),
-        guestCount: guestCount ? parseInt(String(guestCount), 10) : null,
-        addressFull: addressFull.trim(),
-        addressCep: addressCep ? addressCep.trim() : null,
-        addressCity: addressCity ? addressCity.trim() : null,
-        addressState: addressState ? addressState.trim() : null,
-        distanceOneWayKm: quoteCalc.shipping.distanceOneWayKm,
-        distanceTotalKm: quoteCalc.shipping.distanceTotalKm,
-        durationHours: Number(durationHours) || 1.0,
-        selectedComboId: quoteCalc.selectedCombo ? quoteCalc.selectedCombo.comboId : null,
-        selectedComboData: quoteCalc.selectedCombo ? JSON.stringify(quoteCalc.selectedCombo) : null,
-        selectedServicesData: JSON.stringify(quoteCalc.selectedServices),
-        selectedCharacters: JSON.stringify(selectedCharacterNames),
-        fuelCost: quoteCalc.shipping.fuelCost,
-        marginCost: quoteCalc.shipping.marginCost,
-        tollsCost: quoteCalc.shipping.tollsCost,
-        calculatedShipping: quoteCalc.shipping.calculatedShipping,
-        finalShipping: quoteCalc.shipping.finalShipping,
-        servicesSubtotal: quoteCalc.servicesSubtotal,
-        totalAmount: quoteCalc.totalAmount,
-        notes: notes ? String(notes).trim() : null,
-        status: 'pending',
-        ipAddress,
-        userAgent,
+        ...quotePayload,
+        notes: [quotePayload.notes, syncStatusTag].filter(Boolean).join(' | '),
       },
     });
 
-    // Generate WhatsApp text & link
+    // 6. Gerar Mensagem e Link de WhatsApp
     const whatsappMessage = generateWhatsAppMessage({
       code: savedQuote.code,
       clientName: savedQuote.clientName,
@@ -220,6 +233,11 @@ export async function POST(req: NextRequest) {
 
     const whatsappUrl = generateWhatsAppUrl(setting.whatsappPhone, whatsappMessage);
 
+    // Dispara sincronização em segundo plano para outras eventuais cotações pendentes
+    if (centralApiUrl && syncStatusTag.includes('[SYNCED_TO_CENTRAL]')) {
+      syncOfflineQuotesToCentral(centralApiUrl).catch(() => {});
+    }
+
     return NextResponse.json({
       success: true,
       quote: {
@@ -232,7 +250,7 @@ export async function POST(req: NextRequest) {
       whatsappUrl,
       instagramUrl: setting.instagramUrl,
       linktreeUrl: setting.linktreeUrl,
-    });
+    }, { status: 201 });
   } catch (err: any) {
     console.error('Error creating quote:', err);
     return NextResponse.json(
