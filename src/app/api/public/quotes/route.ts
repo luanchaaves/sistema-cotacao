@@ -13,8 +13,27 @@ function generateQuoteCode(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    await ensureDatabaseSeeded();
     const body = await req.json();
+
+    // 1. Integração com a Plataforma Central Unificada
+    const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
+    if (centralApiUrl) {
+      try {
+        const res = await fetch(`${centralApiUrl.replace(/\/+$/, '')}/public/quotes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          const centralQuoteRes = await res.json();
+          return NextResponse.json(centralQuoteRes, { status: 201 });
+        }
+      } catch (centralErr) {
+        console.warn('Falha no repasse para API Central, processando via banco local:', centralErr);
+      }
+    }
+
+    await ensureDatabaseSeeded();
 
     const {
       clientName,

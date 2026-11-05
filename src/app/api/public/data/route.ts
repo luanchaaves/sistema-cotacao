@@ -4,6 +4,24 @@ import { ensureDatabaseSeeded } from '@/lib/seed';
 
 export async function GET() {
   try {
+    // 1. Prioriza integração em tempo real com a API da Plataforma Central Unificada
+    const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
+    if (centralApiUrl) {
+      try {
+        const res = await fetch(`${centralApiUrl.replace(/\/+$/, '')}/public/data`, {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' },
+        });
+        if (res.ok) {
+          const centralData = await res.json();
+          return NextResponse.json(centralData);
+        }
+      } catch (centralErr) {
+        console.warn('API Central indisponível momentaneamente, usando cache local:', centralErr);
+      }
+    }
+
+    // 2. Fallback local via Prisma
     await ensureDatabaseSeeded();
 
     const [setting, services, combos, characters, tolls] = await Promise.all([

@@ -12,6 +12,70 @@ export async function GET(
       return NextResponse.json({ error: 'Código de orçamento não fornecido' }, { status: 400 });
     }
 
+    const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
+    if (centralApiUrl) {
+      try {
+        const res = await fetch(`${centralApiUrl.replace(/\/+$/, '')}/public/quotes/${code}`, {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' },
+        });
+        if (res.ok) {
+          const centralQuote = await res.json();
+          const selectedComboData = typeof centralQuote.selectedComboData === 'string'
+            ? JSON.parse(centralQuote.selectedComboData)
+            : (centralQuote.selectedComboData || null);
+          const selectedServicesData = typeof centralQuote.selectedServicesData === 'string'
+            ? JSON.parse(centralQuote.selectedServicesData)
+            : (centralQuote.selectedServicesData || []);
+          const selectedCharacters = typeof centralQuote.selectedCharacters === 'string'
+            ? JSON.parse(centralQuote.selectedCharacters)
+            : (centralQuote.selectedCharacters || []);
+
+          const whatsappMessage = generateWhatsAppMessage(
+            {
+              code: centralQuote.code || centralQuote.codigo,
+              clientName: centralQuote.clientName || centralQuote.cliente_nome,
+              clientWhatsapp: centralQuote.clientWhatsapp || centralQuote.cliente_telefone,
+              eventType: centralQuote.eventType || centralQuote.tipo_evento,
+              eventDate: centralQuote.eventDate || centralQuote.data_evento,
+              eventTime: centralQuote.eventTime || centralQuote.horario_evento,
+              guestCount: centralQuote.guestCount || centralQuote.quantidade_convidados,
+              addressFull: centralQuote.addressFull || centralQuote.endereco_evento,
+              distanceOneWayKm: centralQuote.distanceOneWayKm || centralQuote.distancia_km,
+              distanceTotalKm: centralQuote.distanceTotalKm || ((centralQuote.distancia_km || 0) * 2),
+              selectedComboData,
+              selectedServicesData,
+              selectedCharacters,
+              calculatedShipping: centralQuote.calculatedShipping || centralQuote.valor_deslocamento || 0,
+              finalShipping: centralQuote.finalShipping || centralQuote.valor_deslocamento || 0,
+              servicesSubtotal: centralQuote.servicesSubtotal || centralQuote.valor_servicos || 0,
+              totalAmount: centralQuote.totalAmount || centralQuote.valor_total || 0,
+              fuelCost: centralQuote.fuelCost || 0,
+              marginCost: centralQuote.marginCost || 0,
+              tollsCost: centralQuote.tollsCost || centralQuote.valor_pedagios || 0,
+            },
+            {
+              companyName: 'Robô LED Partner',
+              whatsappPhone: '11985923985',
+              originCity: 'São Bernardo do Campo',
+              originState: 'SP',
+            }
+          );
+
+          const whatsappUrl = generateWhatsAppUrl('11985923985', whatsappMessage);
+
+          return NextResponse.json({
+            quote: centralQuote,
+            whatsappMessage,
+            whatsappUrl,
+            publicUrl: `https://cotacao.roboledpartner.com.br/orcamento/${centralQuote.code || centralQuote.codigo}`,
+          });
+        }
+      } catch (centralErr) {
+        console.warn('Falha ao buscar orçamento na API central, usando fallback local:', centralErr);
+      }
+    }
+
     const quote = await prisma.quote.findFirst({
       where: {
         OR: [{ code: code.toUpperCase() }, { id: code }],
