@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncOfflineQuotesToCentral } from '@/lib/sync-engine';
+import { getAdminSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Verificação de Autenticação / Autorização (Sessão de Admin ou Token Secreto de Cron)
+    const session = await getAdminSession();
+    const syncToken = req.headers.get('x-sync-secret') || req.headers.get('authorization')?.replace('Bearer ', '');
+    const validSecret = process.env.SYNC_SECRET || process.env.ADMIN_JWT_SECRET || 'roboled-sync-secret';
+
+    if (!session && syncToken !== validSecret) {
+      return NextResponse.json(
+        { error: 'Não autorizado. Faça login como administrador ou envie o cabeçalho x-sync-secret.' },
+        { status: 401 }
+      );
+    }
+
     const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
     if (!centralApiUrl) {
       return NextResponse.json(
