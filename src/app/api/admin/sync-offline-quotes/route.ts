@@ -4,14 +4,25 @@ import { getAdminSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Verificação de Autenticação / Autorização (Sessão de Admin ou Token Secreto de Cron)
+    // 1. Verificação Estrita de Autenticação / Autorização
+    // Acesso permitido SOMENTE para:
+    // a) Sessão de usuário com role 'admin' explicitamente verificado
+    // b) Requisição automatizada com token x-sync-secret que coincida com SYNC_SECRET / ADMIN_JWT_SECRET (sem fallback padrão inseguro)
     const session = await getAdminSession();
-    const syncToken = req.headers.get('x-sync-secret') || req.headers.get('authorization')?.replace('Bearer ', '');
-    const validSecret = process.env.SYNC_SECRET || process.env.ADMIN_JWT_SECRET || 'roboled-sync-secret';
+    const isAdmin = Boolean(session && session.role === 'admin');
 
-    if (!session && syncToken !== validSecret) {
+    const configuredSecret = process.env.SYNC_SECRET || process.env.ADMIN_JWT_SECRET;
+    const providedSecret = req.headers.get('x-sync-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+    const isSecretAuthorized = Boolean(
+      configuredSecret &&
+      providedSecret &&
+      configuredSecret.trim().length >= 16 &&
+      providedSecret === configuredSecret
+    );
+
+    if (!isAdmin && !isSecretAuthorized) {
       return NextResponse.json(
-        { error: 'Não autorizado. Faça login como administrador ou envie o cabeçalho x-sync-secret.' },
+        { error: 'Não autorizado. Acesso restrito a administradores autenticados ou requisições autenticadas com x-sync-secret válido.' },
         { status: 401 }
       );
     }
