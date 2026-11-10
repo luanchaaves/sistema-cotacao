@@ -141,6 +141,7 @@ export default function HomePage() {
         body: JSON.stringify({
           clientName: formData.clientName,
           clientWhatsapp: formData.clientWhatsapp,
+          clientEmail: formData.clientEmail,
           eventType: formData.eventType,
           eventDate: formData.eventDate,
           eventTime: formData.eventTime,

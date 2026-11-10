@@ -9,6 +9,7 @@ export function generateWhatsAppMessage(
     code: string;
     clientName: string;
     clientWhatsapp: string;
+    clientEmail?: string | null;
     eventType: string;
     eventDate: string;
     eventTime: string;

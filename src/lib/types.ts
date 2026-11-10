@@ -162,10 +162,11 @@ export interface QuoteFormData {
   // Step 1 - Event
   clientName: string;
   clientWhatsapp: string;
+  clientEmail?: string | null;
   eventType: EventType | string;
   eventDate: string;
   eventTime: string;
-  guestCount?: number | string;
+  guestCount?: number | string | null;
 
   // Step 2 - Location
   addressFull?: string;
@@ -200,6 +201,7 @@ export interface SavedQuote {
   code: string;
   clientName: string;
   clientWhatsapp: string;
+  clientEmail?: string | null;
   eventType: string;
   eventDate: string;
   eventTime: string;

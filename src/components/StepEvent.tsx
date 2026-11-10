@@ -295,11 +295,11 @@ export function StepEvent({ formData, updateFormData, onNext }: StepEventProps) 
               className="w-full px-4 py-3 rounded-xl text-sm font-medium"
             >
               <option value="">Selecione (opcional)</option>
-              <option value="Até 50 pessoas">Até 50 convidados</option>
-              <option value="50 a 100 pessoas">50 a 100 convidados</option>
-              <option value="100 a 200 pessoas">100 a 200 convidados</option>
-              <option value="200 a 300 pessoas">200 a 300 convidados</option>
-              <option value="Mais de 300 pessoas">Mais de 300 convidados</option>
+              <option value="50">Até 50 convidados</option>
+              <option value="100">50 a 100 convidados</option>
+              <option value="200">100 a 200 convidados</option>
+              <option value="300">200 a 300 convidados</option>
+              <option value="500">Mais de 300 convidados</option>
             </select>
           </div>
         </div>

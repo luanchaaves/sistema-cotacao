@@ -109,6 +109,7 @@ model Quote {
   code                 String   @unique // e.g. RLP-2026-9842
   clientName           String
   clientWhatsapp       String
+  clientEmail          String?
   eventType            String
   eventDate            String
   eventTime            String

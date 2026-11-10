@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     const {
       clientName,
       clientWhatsapp,
+      clientEmail,
       eventType,
       eventDate,
       eventTime,
@@ -43,6 +44,19 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Sanitização e validação robusta de tipos numéricos
+    const parsedGuest = parseInt(String(guestCount ?? ''), 10);
+    const safeGuestCount = !isNaN(parsedGuest) && parsedGuest > 0 ? parsedGuest : null;
+
+    const parsedDist = Number(distanceOneWayKm);
+    const safeDistOneWay = !isNaN(parsedDist) && parsedDist >= 0 ? parsedDist : 0;
+
+    const parsedToll = Number(manualTollAmount);
+    const safeManualToll = !isNaN(parsedToll) && parsedToll >= 0 ? parsedToll : 0;
+
+    const parsedDur = Number(durationHours);
+    const safeDuration = !isNaN(parsedDur) && parsedDur > 0 ? parsedDur : 1.0;
 
     // 1. Carregar configurações e catálogo para cálculo autorizado
     const [setting, allServicesDb, allCombosDb, allCharactersDb] = await Promise.all([
@@ -123,15 +137,15 @@ export async function POST(req: NextRequest) {
       selectedComboId,
       selectedServicesMap: selectedServices,
       selectedCharacterNames,
-      distanceOneWayKm: Number(distanceOneWayKm) || 0,
-      manualTollAmount: Number(manualTollAmount) || 0,
-      generalDurationHours: Number(durationHours) || 1.0,
+      distanceOneWayKm: safeDistOneWay,
+      manualTollAmount: safeManualToll,
+      generalDurationHours: safeDuration,
     });
 
     // 3. Gerar código único e amigável
-    let code = body.code || generateQuoteCode();
+    let code = (body.code || generateQuoteCode()).trim();
     let collisionCheck = await prisma.quote.findUnique({ where: { code } });
-    while (collisionCheck) {
+    while (collisionCheck && !body.code) {
       code = generateQuoteCode();
       collisionCheck = await prisma.quote.findUnique({ where: { code } });
     }
@@ -139,78 +153,120 @@ export async function POST(req: NextRequest) {
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || 'Browser';
 
-    // 4. Tentar sincronizar diretamente com a API Central
+    // 4. PERSISTÊNCIA LOCAL CONFIRMADA (Garantia de Zero Perda de Dados)
+    // A cotação é salva localmente com tag de sincronização pendente ANTES de tentar envio externo.
+    const cleanEmail = clientEmail ? String(clientEmail).trim() : null;
+    const initialNotes = [notes ? String(notes).trim() : null, '[PENDING_CENTRAL_SYNC]'].filter(Boolean).join(' | ');
+
+    const savedQuote = await prisma.quote.create({
+      data: {
+        code,
+        clientName: clientName.trim(),
+        clientWhatsapp: clientWhatsapp.trim(),
+        clientEmail: cleanEmail,
+        eventType: eventType.trim(),
+        eventDate: eventDate.trim(),
+        eventTime: (eventTime || '').trim(),
+        guestCount: safeGuestCount,
+        addressFull: addressFull.trim(),
+        addressCep: addressCep ? String(addressCep).trim() : null,
+        addressCity: addressCity ? String(addressCity).trim() : null,
+        addressState: addressState ? String(addressState).trim() : null,
+        distanceOneWayKm: quoteCalc.shipping.distanceOneWayKm,
+        distanceTotalKm: quoteCalc.shipping.distanceTotalKm,
+        durationHours: safeDuration,
+        selectedComboId: quoteCalc.selectedCombo ? quoteCalc.selectedCombo.comboId : null,
+        selectedComboData: quoteCalc.selectedCombo ? JSON.stringify(quoteCalc.selectedCombo) : null,
+        selectedServicesData: JSON.stringify(quoteCalc.selectedServices),
+        selectedCharacters: JSON.stringify(selectedCharacterNames),
+        fuelCost: quoteCalc.shipping.fuelCost,
+        marginCost: quoteCalc.shipping.marginCost,
+        tollsCost: quoteCalc.shipping.tollsCost,
+        calculatedShipping: quoteCalc.shipping.calculatedShipping,
+        finalShipping: quoteCalc.shipping.finalShipping,
+        servicesSubtotal: quoteCalc.servicesSubtotal,
+        totalAmount: quoteCalc.totalAmount,
+        notes: initialNotes,
+        status: 'pending',
+        ipAddress,
+        userAgent,
+      },
+    });
+
+    // 5. SINCRONIZAÇÃO IDEMPOTENTE COM API CENTRAL
     const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
-    let syncStatusTag = '[PENDING_CENTRAL_SYNC]';
-
-    const quotePayload = {
-      code,
-      clientName: clientName.trim(),
-      clientWhatsapp: clientWhatsapp.trim(),
-      clientEmail: body.clientEmail ? body.clientEmail.trim() : null,
-      eventType: eventType.trim(),
-      eventDate: eventDate.trim(),
-      eventTime: (eventTime || '').trim(),
-      guestCount: guestCount ? parseInt(String(guestCount), 10) : null,
-      addressFull: addressFull.trim(),
-      addressCep: addressCep ? addressCep.trim() : null,
-      addressCity: addressCity ? addressCity.trim() : null,
-      addressState: addressState ? addressState.trim() : null,
-      distanceOneWayKm: quoteCalc.shipping.distanceOneWayKm,
-      distanceTotalKm: quoteCalc.shipping.distanceTotalKm,
-      durationHours: Number(durationHours) || 1.0,
-      selectedComboId: quoteCalc.selectedCombo ? quoteCalc.selectedCombo.comboId : null,
-      selectedComboData: quoteCalc.selectedCombo ? JSON.stringify(quoteCalc.selectedCombo) : null,
-      selectedServicesData: JSON.stringify(quoteCalc.selectedServices),
-      selectedCharacters: JSON.stringify(selectedCharacterNames),
-      fuelCost: quoteCalc.shipping.fuelCost,
-      marginCost: quoteCalc.shipping.marginCost,
-      tollsCost: quoteCalc.shipping.tollsCost,
-      calculatedShipping: quoteCalc.shipping.calculatedShipping,
-      finalShipping: quoteCalc.shipping.finalShipping,
-      servicesSubtotal: quoteCalc.servicesSubtotal,
-      totalAmount: quoteCalc.totalAmount,
-      notes: notes ? String(notes).trim() : null,
-      status: 'pending',
-      ipAddress,
-      userAgent,
-    };
-
     if (centralApiUrl) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout para não travar o cliente
+        const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
+
+        const syncPayload = {
+          code: savedQuote.code,
+          clientName: savedQuote.clientName,
+          clientWhatsapp: savedQuote.clientWhatsapp,
+          clientEmail: savedQuote.clientEmail,
+          eventType: savedQuote.eventType,
+          eventDate: savedQuote.eventDate,
+          eventTime: savedQuote.eventTime,
+          guestCount: savedQuote.guestCount,
+          addressFull: savedQuote.addressFull,
+          addressCep: savedQuote.addressCep,
+          addressCity: savedQuote.addressCity,
+          addressState: savedQuote.addressState,
+          distanceOneWayKm: savedQuote.distanceOneWayKm,
+          distanceTotalKm: savedQuote.distanceTotalKm,
+          durationHours: savedQuote.durationHours,
+          selectedComboId: savedQuote.selectedComboId,
+          selectedComboData: quoteCalc.selectedCombo,
+          selectedServicesData: quoteCalc.selectedServices,
+          selectedCharacters: selectedCharacterNames,
+          fuelCost: savedQuote.fuelCost,
+          marginCost: savedQuote.marginCost,
+          tollsCost: savedQuote.tollsCost,
+          calculatedShipping: savedQuote.calculatedShipping,
+          finalShipping: savedQuote.finalShipping,
+          servicesSubtotal: savedQuote.servicesSubtotal,
+          totalAmount: savedQuote.totalAmount,
+          notes: notes ? String(notes).trim() : null,
+          status: savedQuote.status,
+          ipAddress: savedQuote.ipAddress,
+          userAgent: savedQuote.userAgent,
+        };
 
         const centralRes = await fetch(`${centralApiUrl.replace(/\/+$/, '')}/public/quotes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(quotePayload),
+          body: JSON.stringify(syncPayload),
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
 
         if (centralRes.ok) {
-          syncStatusTag = `[SYNCED_TO_CENTRAL] em ${new Date().toISOString()}`;
+          const syncedNotes = (savedQuote.notes || '').replace(
+            '[PENDING_CENTRAL_SYNC]',
+            `[SYNCED_TO_CENTRAL] em ${new Date().toISOString()}`
+          );
+          await prisma.quote.update({
+            where: { id: savedQuote.id },
+            data: { notes: syncedNotes },
+          });
+
+          // Dispara flush de eventuais cotações em background
+          syncOfflineQuotesToCentral(centralApiUrl).catch(() => {});
+        } else {
+          console.warn(`⚠️ Central API retornou HTTP ${centralRes.status} para cotação ${savedQuote.code}. Fila local preservada.`);
         }
-      } catch (centralErr) {
-        console.warn('⚠️ API Central indisponível no momento. Gravando cotação local com fila de sincronização:', centralErr);
-        syncStatusTag = '[PENDING_CENTRAL_SYNC]';
+      } catch (centralErr: any) {
+        console.warn(`⚠️ Central API indisponível (${centralErr?.message || centralErr}). Cotação salva localmente com tag offline.`);
       }
     }
-
-    // 5. Persistir localmente (Garantia de Zero Perda de Dados)
-    const savedQuote = await prisma.quote.create({
-      data: {
-        ...quotePayload,
-        notes: [quotePayload.notes, syncStatusTag].filter(Boolean).join(' | '),
-      },
-    });
 
     // 6. Gerar Mensagem e Link de WhatsApp
     const whatsappMessage = generateWhatsAppMessage({
       code: savedQuote.code,
       clientName: savedQuote.clientName,
       clientWhatsapp: savedQuote.clientWhatsapp,
+      clientEmail: savedQuote.clientEmail,
       eventType: savedQuote.eventType,
       eventDate: savedQuote.eventDate,
       eventTime: savedQuote.eventTime,
@@ -232,11 +288,6 @@ export async function POST(req: NextRequest) {
     });
 
     const whatsappUrl = generateWhatsAppUrl(setting.whatsappPhone, whatsappMessage);
-
-    // Dispara sincronização em segundo plano para outras eventuais cotações pendentes
-    if (centralApiUrl && syncStatusTag.includes('[SYNCED_TO_CENTRAL]')) {
-      syncOfflineQuotesToCentral(centralApiUrl).catch(() => {});
-    }
 
     return NextResponse.json({
       success: true,
