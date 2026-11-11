@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { ensureDatabaseSeeded } from '@/lib/seed';
 import { fetchAddressByCep, geocodeAddress, calculateDrivingDistance } from '@/lib/distance';
 import { calculateShippingBreakdown } from '@/lib/calculator';
+import { getEffectiveSetting } from '@/lib/central-setting';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       manualTollAmount = 0,
     } = body;
 
-    const setting = await prisma.setting.findUnique({ where: { id: 'default' } });
+    const setting = await getEffectiveSetting();
     if (!setting) {
       return NextResponse.json({ error: 'Configurações de origem não encontradas' }, { status: 500 });
     }

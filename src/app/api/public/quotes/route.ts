@@ -5,6 +5,7 @@ import { calculateQuote } from '@/lib/calculator';
 import { generateWhatsAppMessage, generateWhatsAppUrl } from '@/lib/whatsapp';
 import { ComboItem, ServiceItem } from '@/lib/types';
 import { syncOfflineQuotesToCentral } from '@/lib/sync-engine';
+import { getEffectiveSetting } from '@/lib/central-setting';
 
 function generateQuoteCode(): string {
   const currentYear = new Date().getFullYear();
@@ -58,9 +59,9 @@ export async function POST(req: NextRequest) {
     const parsedDur = Number(durationHours);
     const safeDuration = !isNaN(parsedDur) && parsedDur > 0 ? parsedDur : 1.0;
 
-    // 1. Carregar configurações e catálogo para cálculo autorizado
+    // 1. Carregar configurações efetivas (API Central com fallback Prisma) e catálogo para cálculo autorizado
     const [setting, allServicesDb, allCombosDb, allCharactersDb] = await Promise.all([
-      prisma.setting.findUnique({ where: { id: 'default' } }),
+      getEffectiveSetting(),
       prisma.service.findMany({ where: { isActive: true } }),
       prisma.combo.findMany({ where: { isActive: true } }),
       prisma.character.findMany({ where: { isActive: true } }),
