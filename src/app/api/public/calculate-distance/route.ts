@@ -22,7 +22,15 @@ export async function POST(req: NextRequest) {
       manualTollAmount = 0,
     } = body;
 
-    const setting = await getEffectiveSetting();
+    let setting;
+    try {
+      setting = await getEffectiveSetting({ strict: Boolean(process.env.CENTRAL_API_URL) });
+    } catch (settingErr: any) {
+      return NextResponse.json(
+        { error: 'Não foi possível validar as regras de frete e parâmetros operacionais junto à plataforma central. Tente novamente em instantes.' },
+        { status: 503 }
+      );
+    }
     if (!setting) {
       return NextResponse.json({ error: 'Configurações de origem não encontradas' }, { status: 500 });
     }
