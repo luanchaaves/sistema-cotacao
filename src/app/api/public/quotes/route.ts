@@ -59,9 +59,18 @@ export async function POST(req: NextRequest) {
     const parsedDur = Number(durationHours);
     const safeDuration = !isNaN(parsedDur) && parsedDur > 0 ? parsedDur : 1.0;
 
-    // 1. Carregar configurações efetivas (API Central com fallback Prisma) e catálogo para cálculo autorizado
-    const [setting, allServicesDb, allCombosDb, allCharactersDb] = await Promise.all([
-      getEffectiveSetting(),
+    // 1. Carregar configurações efetivas com validação estrita da API Central quando configurada
+    let setting;
+    try {
+      setting = await getEffectiveSetting({ strict: Boolean(process.env.CENTRAL_API_URL) });
+    } catch (settingErr: any) {
+      return NextResponse.json(
+        { error: 'Não foi possível validar as regras de preços e frete junto à plataforma central. Tente novamente em instantes.' },
+        { status: 503 }
+      );
+    }
+
+    const [allServicesDb, allCombosDb, allCharactersDb] = await Promise.all([
       prisma.service.findMany({ where: { isActive: true } }),
       prisma.combo.findMany({ where: { isActive: true } }),
       prisma.character.findMany({ where: { isActive: true } }),

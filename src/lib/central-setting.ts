@@ -33,9 +33,12 @@ export interface EffectiveSetting {
  * Obtém as configurações efetivas da empresa.
  * Prioridade 1: API Central Unificada (${CENTRAL_API_URL}/public/data), garantindo que alterações
  * feitas no painel administrativo sejam refletidas imediatamente na Cotação Pública.
- * Prioridade 2: Fallback local via Prisma SQLite caso a API Central esteja indisponível ou offline.
+ * Prioridade 2: Fallback local via Prisma SQLite caso a API Central não esteja configurada ou se
+ * strict for falso e a Central estiver offline.
+ *
+ * @param options.strict Se true, lança erro caso CENTRAL_API_URL esteja definida mas a Central falhe/esteja offline.
  */
-export async function getEffectiveSetting(): Promise<EffectiveSetting> {
+export async function getEffectiveSetting(options?: { strict?: boolean }): Promise<EffectiveSetting> {
   const centralApiUrl = process.env.CENTRAL_API_URL || process.env.NEXT_PUBLIC_CENTRAL_API_URL;
 
   if (centralApiUrl) {
@@ -77,8 +80,14 @@ export async function getEffectiveSetting(): Promise<EffectiveSetting> {
             updatedAt: s.updatedAt || s.updated_at,
           };
         }
+      } else if (options?.strict) {
+        throw new Error(`Central API retornou HTTP ${res.status}: ${res.statusText}`);
       }
-    } catch (centralErr) {
+    } catch (centralErr: any) {
+      if (options?.strict) {
+        console.error('[getEffectiveSetting] Erro estrito: Central API indisponível:', centralErr);
+        throw new Error(`Serviço central de precificação e configurações indisponível: ${centralErr?.message || centralErr}`);
+      }
       console.warn('[getEffectiveSetting] Central API indisponível, usando fallback local Prisma:', centralErr);
     }
   }
